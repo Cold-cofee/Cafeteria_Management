@@ -1,0 +1,61 @@
+root/
+├── docker-compose.yml
+├── Dockerfile
+├── requirements.txt 
+├── alembic.ini           # Конфиг для миграций 
+├── main.py               # Точка входа (создание app)
+├── .env
+│
+├── alembic/              # Папка с файлами миграций БД
+│
+├── src/
+│   ├── database.py       # Подключение к БД
+│   ├── models.py         # ВСЕ таблицы БД в одном файле (User, Dish, Order...)
+│   ├── schemas.py        # ВСЕ Pydantic схемы (валидация JSON)
+│   ├── utils.py          # Хеширование паролей и работа с JWT
+│   ├── worker.py         # Обработчик уведомлений для пользователей
+│   │
+│   └── routers/          # Вся логика тут (поделенная по ролям)
+│       ├── auth.py       # Вход/Регистрация
+│       ├── student.py    # Меню, Оплата, "Я поел", Отзывы 
+│       ├── cook.py       # Выдача еды, Склад, Заявки на закупку
+│       └── admin.py      # Отчеты, Согласование заявок, Статистика
+│    │
+│    └── orders/           # Модуль заказов
+│        ├── router.py
+│        ├── schemas.py
+│        ├── models.py
+│        └── service.py
+└── frontend/                # ФРОНТЕНД
+    ├── static/              # Ресурсы
+    │   ├── css/
+    │   │   └── style.css    # Общие стили (красивые кнопки, таблицы)
+    │   └── js/
+    │       ├── api.js       # Обертка fetch c токеном
+    │       ├── navbar.js    # Рендеринг меню в зависимости от роли
+    │       └── pages/       # Логика конкретных страниц (чтобы не валить всё в кучу)
+    │           ├── student.js
+    │           ├── cook.js
+    │           └── admin.js
+    │
+    └── templates/           # HTML Страницы (15 штук)
+        │
+        ├── common/          # Общие
+        │   ├── login.html
+        │   ├── register.html
+        │   └── 404.html
+        │
+        ├── student/         # Ученик
+        │   ├── menu.html           # Меню с кнопками "Заказать"
+        │   ├── history.html        # Таблица истории
+        │   ├── profile.html        # Настройки и аллергии
+        │
+        ├── cook/            # Повар
+        │   ├── orders.html         # Экран выдачи
+        │   ├── inventory.html      # Склад продуктов
+        │   └── procurement.html    # Заявки на закупку
+        │
+        └── admin/           # Админ
+            ├── stats.html          # Дашборд
+            ├── requests.html       # Согласование закупок
+            ├── users.html          # Список пользователей
