@@ -1,5 +1,5 @@
 from src.database import db
-
+# Здесь мы инициализируем и проверяем таблицу menu
 class Menu(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
