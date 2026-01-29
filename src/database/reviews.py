@@ -1,9 +1,9 @@
-from src.database import db
+from src.config import db
 # Здесь мы инициализируем и проверяем таблицу reviews (отзывы)
 class Reviews(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user = db.Column(db.String(255), db.ForeignKey('user.login'), nullable=False)
-    review = db.Column(db.String(1000), nullable=False)
+    user = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    review = db.Column(db.Text, nullable=False)
     rating = db.Column(db.Integer, nullable=False)
     date = db.Column(db.DateTime, nullable=False)
 

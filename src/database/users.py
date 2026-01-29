@@ -1,4 +1,4 @@
-from src.database import db
+from src.config import db
 from cryptography.fernet import Fernet
 import os
 import secrets
@@ -9,8 +9,8 @@ import string
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     login = db.Column(db.String(80), unique=True, nullable=False)
-    password = db.Column(db.String(80), nullable=False)
-    role = db.Column(db.String(80), nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+    role = db.Column(db.String(10), nullable=False)
     wallet = db.Column(db.String(255), nullable=False, unique=True)
     
     def __init__(self, login, password, role="student", wallet=None):

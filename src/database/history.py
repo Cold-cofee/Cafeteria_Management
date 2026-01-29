@@ -1,10 +1,10 @@
-from src.database import db
+from src.config import db
 from src.database.users import User
 # Здесь мы инициализируем и проверяем таблицу history
 class History(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user = db.Column(db.String(255), db.ForeignKey('user.login'), nullable=False)
-    type_of_transaction = db.Column(db.String(255), nullable=False)
+    user = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    type_of_transaction = db.Column(db.String(25), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
     date = db.Column(db.DateTime, nullable=False)
 

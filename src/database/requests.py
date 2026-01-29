@@ -1,11 +1,11 @@
-from src.database import db
+from src.config import db
 # Здесь мы инициализируем и проверяем таблицу requests
 class Requests(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user = db.Column(db.String(255), db.ForeignKey('user.login'), nullable=False)
-    product = db.Column(db.String(255), db.ForeignKey('store.name'), nullable=False)
+    user = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    product = db.Column(db.String(255), db.ForeignKey('storage.name'), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
-    status = db.Column(db.String(255), nullable=False)
+    status = db.Column(db.String(25), nullable=False)
     date = db.Column(db.DateTime, nullable=False)
 
     def __init__(self, user, product, amount, status, date):

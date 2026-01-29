@@ -1,4 +1,4 @@
-from src.database import db
+from src.config import db
 from src.database.users import User
 
 class Wallet(db.Model):
