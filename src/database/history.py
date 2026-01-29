@@ -1,5 +1,5 @@
-from src.config import db
-from src.database.users import User
+from config import db
+from database.users import User
 # Здесь мы инициализируем и проверяем таблицу history
 class History(db.Model):
     id = db.Column(db.Integer, primary_key=True)

@@ -1,4 +1,4 @@
-from src.config import db
+from config import db
 # Здесь мы инициализируем и проверяем таблицу reviews (отзывы)
 class Reviews(db.Model):
     id = db.Column(db.Integer, primary_key=True)
