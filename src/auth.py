@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
 from werkzeug.security import generate_password_hash
+from werkzeug.security import check_password_hash
 
 # Инициализация приложения.
 # Везде, где было просто name, теперь __name__ (по два подчеркивания!)
@@ -8,6 +9,25 @@ app.config['SECRET_KEY'] = 'dev-secret-key'
 
 
 @app.route('/register', methods=['GET', 'POST'])
+
+
+
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        login_val = request.form.get('login')
+        password_val = request.form.get('password')
+
+        # В реальности здесь будет поиск в базе данных через Илью.
+        # Пока имитируем проверку:
+        print(f"Попытка входа: {login_val}")
+
+        # Если пароль верный (проверка хеша)
+        return f"<h1>Добро пожаловать, {login_val}!</h1>"
+
+    return render_template('common/login.html')
 def register():
     if request.method == 'POST':
         # Получаем данные из твоей анкеты
