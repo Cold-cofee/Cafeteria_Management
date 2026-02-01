@@ -3,7 +3,7 @@ from werkzeug.security import generate_password_hash
 from werkzeug.security import check_password_hash
 
 # Инициализация приложения.
-# Везде, где было просто name, теперь __name__ (по два подчеркивания!)
+
 app = Flask(__name__,template_folder='../frontend/templates')
 app.config['SECRET_KEY'] = 'dev-secret-key'
 
@@ -20,7 +20,7 @@ def login():
         login_val = request.form.get('login')
         password_val = request.form.get('password')
 
-        # В реальности здесь будет поиск в базе данных через Илью.
+        
         # Пока имитируем проверку:
         print(f"Попытка входа: {login_val}")
 
@@ -36,10 +36,10 @@ def register():
         role = request.form.get('role')
         allergies = request.form.get('allergies')
 
-        # Шифруем пароль (безопасность по ТЗ)
+        
         hashed_pw = generate_password_hash(password)
 
-        # Печатаем в консоль PyCharm, чтобы ты видел результат
+       
         print(f"\n--- НОВЫЙ ПОЛЬЗОВАТЕЛЬ ---")
         print(f"Логин: {login}\nРоль: {role}\nХеш: {hashed_pw}\nАллергии: {allergies}")
 
@@ -49,6 +49,6 @@ def register():
     return render_template('common/register.html')
 
 
-# Самая важная строчка для запуска
+
 if __name__ == '__main__':
     app.run(debug=True)
