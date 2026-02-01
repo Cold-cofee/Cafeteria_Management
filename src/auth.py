@@ -43,7 +43,7 @@ def register():
                 # Создаем объект пользователя
                 new_user = User()
 
-                # ВЫЗОВ МЕТОДА ИЛЬИ (с передачей логина и пароля)
+              
                 # Это создаст юзера и зашифрует кошелек ключом из os.environ
                 new_user.init(login=login, password=hashed_pw, role=role)
 
@@ -113,7 +113,7 @@ def storage_list():
         type_of_product = request.form.get('type_of_product')
 
         with app.app_context():
-            # Создаем объект Storage, как прописал Илья
+            # Создаем объект Storage
             new_item = Storage(name=name, count=int(count), type_of_product=type_of_product)
             db.session.add(new_item)
             db.session.commit()
