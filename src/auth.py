@@ -141,7 +141,7 @@ def manage_inventory():
         product_type = request.form.get('type_of_product')
 
         with app.app_context():
-            # Создаем запись, используя init от nyKilka
+            # Создаем запись
             new_item = Storage(name=name, count=int(count), type_of_product=product_type)
             db.session.add(new_item)
             db.session.commit()
@@ -161,6 +161,38 @@ def delete_item(item_id):
             db.session.commit()
     return redirect(url_for('manage_inventory'))
 
+
+from datetime import datetime
+from src.database.requests import Requests
+
+
+@app.route('/cook/procurement', methods=['GET', 'POST'])
+def procurement_page():
+    if request.method == 'POST':
+        product_name = request.form.get('product')
+        amount = request.form.get('amount')
+
+        # Для теста пока поставим ID пользователя = 1 (потом заменим на текущего)
+        user_id = 1
+        current_date = datetime.now()
+
+        with app.app_context():
+
+            # user, product, amount, status, date
+            new_req = Requests(
+                user=user_id,
+                product=product_name,
+                amount=int(amount),
+                status="Ожидает",
+                date=current_date
+            )
+            db.session.add(new_req)
+            db.session.commit()
+        return redirect(url_for('procurement_page'))
+
+    # Загружаем все заявки, чтобы повар их видел
+    all_requests = Requests.query.all()
+    return render_template('cook/procurement.html', requests=all_requests)
 
 
 
