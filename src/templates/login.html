@@ -20,7 +20,7 @@
     {% endif %}
     {% endwith %}
 
-    <form method="POST" action="/login">
+    <form method="POST" action="{{ url_for('login') }}"> s
         <div>
             <label for="login">Логин:</label>
             <input type="text" id="login" name="login" required>
