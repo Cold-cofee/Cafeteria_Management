@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Управление складом - Повар</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 0; }
+        /* Шапка навигации */
+        .navbar { background: #2c3e50; padding: 15px; display: flex; justify-content: center; gap: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .navbar a { color: white; text-decoration: none; font-weight: bold; padding: 8px 15px; border-radius: 5px; transition: 0.3s; }
+        .navbar a:hover { background: #34495e; }
+        .navbar a.active { background: #3498db; }
+
+        .container { max-width: 900px; margin: 30px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        .add-form { display: flex; gap: 10px; margin-bottom: 30px; background: #f9f9f9; padding: 20px; border-radius: 8px; }
+        input, select, button { padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+        .btn-add { background: #27ae60; color: white; border: none; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #3498db; color: white; }
+        .btn-delete { color: #e74c3c; text-decoration: none; font-weight: bold; border: 1px solid #e74c3c; padding: 5px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <a href="/cook/orders">📋 Очередь заказов</a>
+    <a href="/cook/storage" class="active">📦 Управление складом</a>
+    <a href="/">🏠 В личный кабинет</a>
+    <a href="/logout" style="color: #ff7675;">Выйти</a>
+</div>
+
+<div class="container">
+    <h2>Управление складом</h2>
+    <form action="/cook/add_product" method="POST" class="add-form">
+        <input type="text" name="name" placeholder="Название блюда" required style="flex: 2;">
+        <input type="number" name="count" placeholder="Кол-во" required style="width: 80px;">
+        <select name="category">
+            <option value="Еда">Еда</option>
+            <option value="Напитки">Напитки</option>
+            <option value="Выпечка">Выпечка</option>
+        </select>
+        <button type="submit" class="btn-add">Добавить</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr><th>Название</th><th>Категория</th><th>Остаток</th><th>Действие</th></tr>
+        </thead>
+        <tbody>
+            {% for item in storage %}
+            <tr>
+                <td><strong>{{ item.name }}</strong></td>
+                <td>{{ item.type_of_product }}</td>
+                <td>{{ item.count }} шт.</td>
+                <td><a href="/cook/delete_product/{{ item.id }}" class="btn-delete">Удалить</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>
+
