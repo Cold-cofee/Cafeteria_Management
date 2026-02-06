@@ -9,6 +9,7 @@ from src.database.store import Storage
 from src.database.requests import Requests
 
 
+# Модель отзывов
 class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     author = db.Column(db.String(80), nullable=False)
@@ -22,11 +23,16 @@ with app.app_context():
 
 @app.route('/')
 def index():
-    if 'user_id' not in session: return redirect(url_for('login'))
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
     user = User.query.get(session['user_id'])
 
+    # Исправление ошибки с кошельком: генерируем номер на основе ID
+    # Это заменит сломанный метод get_wallet()
+    wallet_number = f"💳 ШК-{user.id + 1000:05d}"
+
     selected_cat = request.args.get('category', 'Все')
-    # Показываем только то, что есть в наличии (count > 0)
     query = Storage.query.filter(Storage.count > 0)
     if selected_cat != 'Все':
         query = query.filter_by(type_of_product=selected_cat)
@@ -36,67 +42,77 @@ def index():
     reviews = Review.query.order_by(Review.date.desc()).all()
     my_reqs = Requests.query.filter_by(user=user.id).order_by(Requests.date.desc()).all()
 
+    # Перевод ролей для красивого отображения
+    role_translate = {
+        'student': 'Ученик',
+        'cook': 'Повар',
+        'admin': 'Администратор'
+    }
+    user_role_ru = role_translate.get(user.role, user.role)
+
     return render_template('common/index.html',
-                           user=user, wallet_number=user.get_wallet(),
-                           menu=menu_items, categories=categories,
-                           current_category=selected_cat, reviews=reviews,
+                           user=user,
+                           user_role_ru=user_role_ru,
+                           wallet_number=wallet_number,
+                           menu=menu_items,
+                           categories=categories,
+                           current_category=selected_cat,
+                           reviews=reviews,
                            my_requests=my_reqs)
 
 
-@app.route('/create_request', methods=['POST'])
-def create_request():
-    if 'user_id' not in session: return redirect(url_for('login'))
+# --- АДМИН-ПАНЕЛЬ (Управление ролями) ---
+@app.route('/admin/panel')
+def admin_panel():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        return "<h1>Доступ запрещен. Требуются права администратора.</h1>", 403
 
-    product_name = request.form.get('item_name')
-    # Находим товар на складе
-    product_in_store = Storage.query.filter_by(name=product_name).first()
-
-    # Проверяем, осталось ли что-то в наличии
-    if product_in_store and product_in_store.count > 0:
-        # 1. Уменьшаем количество на складе
-        product_in_store.count -= 1
-
-        # 2. Создаем заявку
-        new_req = Requests(user=session['user_id'], product=product_name,
-                           amount=1, status='pending', date=datetime.now())
-
-        db.session.add(new_req)
-        db.session.commit()
-    else:
-        # Если еда кончилась, пока мы нажимали кнопку
-        print("Ошибка: еда закончилась!")
-
-    return redirect(url_for('index'))
+    # Показываем всех пользователей, кроме текущего админа
+    all_users = User.query.filter(User.id != session['user_id']).all()
+    return render_template('admin/admin_panel.html', users=all_users)
 
 
-# --- ПАНЕЛЬ ПОВАРА: УПРАВЛЕНИЕ СКЛАДОМ ---
-
-@app.route('/cook/storage')
-def cook_storage():
-    # Проверка роли (только для повара)
-    if 'user_id' not in session or session.get('role') != 'cook':
+@app.route('/admin/change_role/<int:user_id>/<string:new_role>')
+def change_role(user_id, new_role):
+    if session.get('role') != 'admin':
         return redirect(url_for('login'))
 
-    # Получаем все товары со склада
-    all_storage = Storage.query.all()
-    return render_template('cook/storage_manage.html', storage=all_storage)
+    target_user = User.query.get(user_id)
+    if target_user:
+        target_user.role = new_role
+        db.session.commit()
+    return redirect(url_for('admin_panel'))
+
+
+# --- ПАНЕЛЬ ПОВАРА (Склад и Заказы) ---
+@app.route('/cook/storage')
+def cook_storage():
+    if session.get('role') not in ['cook', 'admin']:
+        return redirect(url_for('login'))
+    return render_template('cook/storage_manage.html', storage=Storage.query.all())
+
+
+@app.route('/cook/orders')
+def cook_orders():
+    if session.get('role') not in ['cook', 'admin']:
+        return redirect(url_for('login'))
+    return render_template('cook/orders_manage.html', requests=Requests.query.order_by(Requests.date.desc()).all())
 
 
 @app.route('/cook/add_product', methods=['POST'])
 def add_product():
-    if session.get('role') != 'cook': return redirect(url_for('login'))
+    if session.get('role') not in ['cook', 'admin']:
+        return redirect(url_for('login'))
 
     name = request.form.get('name')
     count = int(request.form.get('count', 0))
     category = request.form.get('category', 'Еда')
 
-    # Если такой товар уже есть — прибавляем количество, если нет — создаем новый
     existing = Storage.query.filter_by(name=name).first()
     if existing:
         existing.count += count
     else:
-        new_item = Storage(name=name, count=count, type_of_product=category)
-        db.session.add(new_item)
+        db.session.add(Storage(name=name, count=count, type_of_product=category))
 
     db.session.commit()
     return redirect(url_for('cook_storage'))
@@ -104,7 +120,8 @@ def add_product():
 
 @app.route('/cook/delete_product/<int:item_id>')
 def delete_product(item_id):
-    if session.get('role') != 'cook': return redirect(url_for('login'))
+    if session.get('role') not in ['cook', 'admin']:
+        return redirect(url_for('login'))
 
     item = Storage.query.get(item_id)
     if item:
@@ -113,28 +130,42 @@ def delete_product(item_id):
     return redirect(url_for('cook_storage'))
 
 
-@app.route('/cook/orders')
-def cook_orders():
-    if session.get('role') != 'cook': return redirect(url_for('login'))
-    # Повар видит все активные заказы (сначала новые)
-    all_reqs = Requests.query.order_by(Requests.date.desc()).all()
-    return render_template('cook/orders_manage.html', requests=all_reqs)
-
-
 @app.route('/cook/update_status/<int:req_id>/<string:new_status>')
 def update_status(req_id, new_status):
-    if session.get('role') != 'cook': return redirect(url_for('login'))
+    if session.get('role') not in ['cook', 'admin']:
+        return redirect(url_for('login'))
 
     order = Requests.query.get(req_id)
     if order:
-        order.status = new_status
+        # Русские статусы для истории заказов
+        status_map = {'approved': 'Одобрено', 'rejected': 'Отклонено'}
+        order.status = status_map.get(new_status, new_status)
         db.session.commit()
     return redirect(url_for('cook_orders'))
 
 
+# --- ОСНОВНЫЕ ФУНКЦИИ ---
+@app.route('/create_request', methods=['POST'])
+def create_request():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    prod = Storage.query.filter_by(name=request.form.get('item_name')).first()
+    if prod and prod.count > 0:
+        prod.count -= 1
+        # Статус заказа при создании
+        new_req = Requests(user=session['user_id'], product=prod.name,
+                           amount=1, status='В ожидании', date=datetime.now())
+        db.session.add(new_req)
+        db.session.commit()
+    return redirect(url_for('index'))
+
+
 @app.route('/add_review', methods=['POST'])
 def add_review():
-    if 'user_id' not in session: return redirect(url_for('login'))
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
     text = request.form.get('review_text')
     if text:
         user = User.query.get(session['user_id'])
@@ -143,7 +174,7 @@ def add_review():
     return redirect(url_for('index'))
 
 
-# Остальные маршруты (login, register, logout) остаются без изменений
+# --- АВТОРИЗАЦИЯ ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -158,11 +189,16 @@ def login():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        login = request.form.get('login') or request.form.get('username')
+        login_name = request.form.get('login')
         password = request.form.get('password')
         role = request.form.get('role', 'student')
-        if User.query.filter_by(login=login).first(): return "Логин занят"
-        new_user = User(login=login, password=generate_password_hash(password), role=role)
+
+        if User.query.filter_by(login=login_name).first():
+            return "Этот логин уже занят"
+
+        new_user = User(login=login_name,
+                        password=generate_password_hash(password),
+                        role=role)
         db.session.add(new_user)
         db.session.commit()
         return redirect(url_for('login'))

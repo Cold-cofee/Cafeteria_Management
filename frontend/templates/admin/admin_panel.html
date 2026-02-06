@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Админ-панель</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { color: #8e44ad; border-bottom: 2px solid #e1bee7; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #8e44ad; color: white; }
+        .role-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+        .role-student { background: #e8f0fe; color: #1a73e8; }
+        .role-cook { background: #fff3cd; color: #856404; }
+        .role-admin { background: #f8d7da; color: #721c24; }
+        .btn-role { text-decoration: none; font-size: 11px; padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; color: #333; transition: 0.2s; background: #fff; }
+        .btn-role:hover { background: #f0f0f0; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>🛡️ Управление пользователями</h2>
+    <table>
+        <thead>
+            <tr><th>Логин</th><th>Роль</th><th>Действия (сменить на)</th></tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr>
+                <td><strong>{{ u.login }}</strong></td>
+                <td><span class="role-badge role-{{ u.role }}">{{ u.role }}</span></td>
+                <td>
+                    <a href="/admin/change_role/{{ u.id }}/student" class="btn-role">Ученик</a>
+                    <a href="/admin/change_role/{{ u.id }}/cook" class="btn-role">Повар</a>
+                    <a href="/admin/change_role/{{ u.id }}/admin" class="btn-role">Админ</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p><a href="/" style="color: #8e44ad; text-decoration: none; font-weight: bold;">← Вернуться в кабинет</a></p>
+</div>
+</body>
+</html>
+
