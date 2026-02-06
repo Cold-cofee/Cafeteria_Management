@@ -184,6 +184,14 @@ def menu_page():
     items = Storage.query.filter(Storage.count > 0).all()
     return render_template('student/menu.html', items=items)
 
+@wallet_bp.route('/ticket/<item_name>')
+@login_required
+def ticket_page(item_name):
+    # Показываем тикет с текущим временем
+    now = datetime.now().strftime("%H:%M %d.%m")
+    return render_template('student/ticket.html', item_name=item_name, date=now)
+
+
 # Удаление со склада
 @wallet_bp.route('/buy/<int:item_id>', methods=['POST'])
 @login_required
@@ -206,6 +214,6 @@ def buy_product(item_id):
         # 4. Если деньги списались — уменьшаем количество на складе
         item.count -= 1
         db.session.commit()
-    
+        return redirect(url_for('wallet_bp.ticket_page', item_name=item.name))
     # Возвращаемся в меню с сообщением
     return redirect(url_for('wallet_bp.menu_page'))
