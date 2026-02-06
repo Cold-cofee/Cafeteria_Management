@@ -14,6 +14,8 @@ from src.database.users import User
 from src.config import db
 from src.database.history import History
 from src.database.store import Storage
+from src.database.requests import Requests
+from datetime import datetime
 
 
 current_dir = os.path.dirname(os.path.abspath(__file__)) # Папка src
@@ -34,13 +36,13 @@ def wallet_page():
     POST запрос: Обрабатывает нажатие кнопок Пополнить/Снять.
     """
     
-    # --- 1. ЕСЛИ ПРИШЛИ ДАННЫЕ ОТ ПОЛЬЗОВАТЕЛЯ (POST) ---
+    #  если пришли данные от пользователя
     if request.method == "POST":
         # Получаем данные из формы
         action = request.form.get("action")   # deposit или withdraw
         amount_str = request.form.get("amount") # Сумма строкой
 
-        #1: ВАЛИДАЦИЯ (Schema)
+        #1: валидация (Schema)
         # Узнаём корректность данных от пользователя
         amount, errors = StudentSchema.validate_payment(amount_str)
 
@@ -73,54 +75,84 @@ def wallet_page():
                          message_type=message_type,
                          history=history_records)
 
-@wallet_bp.route('/inventory', methods=['GET', 'POST'])
+# страница повара для создания заявок на закупку продуктов
+@wallet_bp.route('/cook/procurement', methods=['GET', 'POST'])
 @login_required
-def inventory_page():
-    """
-    Страница склада.
-    Показывает товары и позволяет добавлять новые (если админ/повар).
-    """
-    # 1. Добавление товара
+def procurement_page():
     if request.method == 'POST':
-        name = request.form.get('name')
-        quantity = request.form.get('quantity')
-        price = request.form.get('price')
-        category = request.form.get('category')
+        product_name = request.form.get('product')
+        amount = request.form.get('amount')
+        
+        # Цену тут не спрашиваем, её нет в БД заявок
+        
+        user_id = current_user.id 
+        current_date = datetime.now()
 
-        # Проверка, что поля заполнены
-        if name and quantity and price:
+        if product_name and amount:
             try:
-                new_item = Storage(
-                    name=name, 
-                    quantity=int(quantity), 
-                    price=int(price),
-                    category=category
+                new_req = Requests(
+                    user=user_id,
+                    product=product_name,
+                    amount=int(amount),
+                    status="Ожидает",
+                    date=current_date
                 )
-                db.session.add(new_item)
+                db.session.add(new_req)
                 db.session.commit()
             except Exception as e:
                 db.session.rollback()
-                print(f"Ошибка добавления товара: {e}")
-        
-        # Перезагружаем страницу, чтобы сбросить форму
-        return redirect(url_for('wallet_bp.inventory_page'))
+                print(f"Ошибка: {e}")
+                
+        return redirect(url_for('wallet_bp.procurement_page'))
 
-    # 2. Отображение списка
+    all_requests = Requests.query.all()
+    # Используем шаблон повара 
+    return render_template('cook/procurement.html', requests=all_requests)
+
+
+# страница администратора для управления инвентарем
+@wallet_bp.route('/inventory', methods=['GET'])
+@login_required
+def inventory_page():
     items = Storage.query.all()
-    
+    requests = Requests.query.all()
+    return render_template('store/inventory.html', items=items, requests=requests)
 
-    return render_template('cook/inventory.html', items=items)
+
+@wallet_bp.route('/requests/approve', methods=['POST'])
+@login_required
+def approve_request():
+    # Получаем данные из скрытой формы в inventory.html
+    req_id = request.form.get('req_id')
+    price_val = request.form.get('price_for_sell') # <--- ВОТ ТУТ МЫ ПОЛУЧАЕМ ЦЕНУ
+
+    if req_id and price_val:
+        req = Requests.query.get(req_id)
+        if req:
+            # Создаем товар в Storage (тут цена обязательна)
+            new_item = Storage(
+                name=req.product,
+                quantity=req.amount,
+                price=int(price_val), # Берем цену, которую ввел админ
+                category="Еда"
+            )
+            
+            try:
+                db.session.add(new_item)
+                db.session.delete(req) # Удаляем заявку
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                print(f"Ошибка одобрения: {e}")
+
+    return redirect(url_for('wallet_bp.inventory_page'))
 
 
 @wallet_bp.route('/inventory/delete/<int:item_id>')
 @login_required
 def delete_inventory_item(item_id):
-    """
-    Удаление товара по ID
-    """
     item = Storage.query.get(item_id)
     if item:
         db.session.delete(item)
         db.session.commit()
-    
     return redirect(url_for('wallet_bp.inventory_page'))
