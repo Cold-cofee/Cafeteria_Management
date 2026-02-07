@@ -60,7 +60,7 @@
                     <span class="status-badge status-{{ st_class }}">{{ r.status }}</span>
                 </td>
                 <td>
-                    {# ИМЕННО ТУТ ИСПРАВЛЕНИЕ: ищем русский статус #}
+
                     {% if r.status == 'В ожидании' %}
                         <a href="/cook/update_status/{{ r.id }}/approved" class="btn btn-approve">Одобрить</a>
                         <a href="/cook/update_status/{{ r.id }}/rejected" class="btn btn-reject">Отклонить</a>
