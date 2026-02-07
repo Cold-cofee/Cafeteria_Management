@@ -2,21 +2,65 @@ import os
 from datetime import datetime
 from flask import render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
+from cryptography.fernet import Fernet
 from sqlalchemy import func
+
 from src.config import app, db
-from src.database.users import User
+#from src.database.users import User
 from src.database.store import Storage
 from src.database.requests import Requests
 
 
-# --- МОДЕЛИ ДАННЫХ (Внутренние) ---
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    login = db.Column(db.String(80), unique=True, nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=True)  # ВОТ ЭТО ПОЛЕ ОШИБКА НЕ ВИДЕЛА
+    role = db.Column(db.String(10), nullable=False, default='student')
+    wallet = db.Column(db.String(255), nullable=False, unique=True)
+    allergen = db.Column(db.String(255), nullable=True)
+    preferences = db.Column(db.String(255), nullable=True)
+
+    def __init__(self, login, password, role="student", wallet=None, email=None):
+        self.login = login
+        self.password = password
+        self.role = role
+        self.email = email
+
+        # Генерация и шифрование кошелька
+        import secrets, string
+        from cryptography.fernet import Fernet
+        key = os.getenv("KEY", '3df5tPHi4nZQhof7gCKGPKOOy3z_HJEXmQNie1i55_k=')
+        cipher_suite = Fernet(key.encode() if isinstance(key, str) else key)
+
+        if wallet is None:
+            wallet_val = ''.join(secrets.choice(string.digits) for _ in range(16))
+        else:
+            wallet_val = wallet
+
+        self.wallet = cipher_suite.encrypt(str(wallet_val).encode('utf-8')).decode('utf-8')
+
+    def get_wallet(self):
+        from cryptography.fernet import Fernet
+        key = os.getenv("KEY", '3df5tPHi4nZQhof7gCKGPKOOy3z_HJEXmQNie1i55_k=')
+        try:
+            cipher_suite = Fernet(key.encode() if isinstance(key, str) else key)
+            return cipher_suite.decrypt(self.wallet.encode('utf-8')).decode('utf-8')
+        except:
+            return "Ошибка расшифровки"
+# Устанавливаем ключ шифрования (обязательно для работы кошелька)
+os.environ["KEY"] = '3df5tPHi4nZQhof7gCKGPKOOy3z_HJEXmQNie1i55_k='
+
+
+# --- ВНУТРЕННИЕ МОДЕЛИ СТОЛОВОЙ ---
+
+# --- МОДЕЛИ ДАННЫХ ---
 
 class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     author = db.Column(db.String(80), nullable=False)
     text = db.Column(db.Text, nullable=False)
     date = db.Column(db.DateTime, default=datetime.utcnow)
-
 
 class SupplyRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -26,19 +70,27 @@ class SupplyRequest(db.Model):
     status = db.Column(db.String(20), default='В ожидании')
     date = db.Column(db.DateTime, default=datetime.utcnow)
 
+# ДОБАВЬ ЭТО СЮДА:
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), nullable=False) # Убрали ForeignKey для упрощения связки
+    subject = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), default='pending')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-with app.app_context():
-    db.create_all()
 
 
-# Глобальный доступ к моделям для HTML шаблонов
+
+
 @app.context_processor
 def inject_models():
-    return dict(User=User, SupplyRequest=SupplyRequest, Storage=Storage, Requests=Requests)
+    return dict(User=User, SupplyRequest=SupplyRequest, Storage=Storage, Requests=Requests, Notification=Notification)
 
 
-# --- ЛИЧНЫЙ КАБИНЕТ (INDEX) ---
-
+# --- ЛИЧНЫЙ КАБИНЕТ УЧЕНИКА ---
+with app.app_context():
+    db.create_all()
 @app.route('/')
 def index():
     if 'user_id' not in session:
@@ -49,17 +101,21 @@ def index():
         session.clear()
         return redirect(url_for('login'))
 
-    # ИСПРАВЛЕННОЕ СОХРАНЕНИЕ АЛЛЕРГИЙ
-    # Мы проверяем и GET (из формы с кнопкой) и сохраняем в базу
-    update_val = request.args.get('update_allergies')
-    if update_val is not None:
-        user.allergies = update_val
+    # Сохранение аллергенов и предпочтений
+    new_allergen = request.args.get('update_allergies')
+    new_prefs = request.args.get('update_preferences')
+
+    if new_allergen is not None or new_prefs is not None:
+        if new_allergen is not None: user.allergen = new_allergen
+        if new_prefs is not None: user.preferences = new_prefs
         db.session.commit()
         return redirect(url_for('index'))
 
-    wallet_number = f"💳 ШК-{user.id + 1000:05d}"
+    # Данные для профиля
+    wallet_number = f"💳 {user.get_wallet()}"
+    notifs = Notification.query.filter_by(email=user.email).order_by(Notification.created_at.desc()).limit(5).all()
 
-    # Фильтрация меню
+    # Меню и фильтрация
     selected_cat = request.args.get('category', 'Все')
     query = Storage.query.filter(Storage.count > 0)
     if selected_cat != 'Все':
@@ -71,16 +127,15 @@ def index():
     my_reqs = Requests.query.filter_by(user=user.id).order_by(Requests.date.desc()).all()
 
     role_translate = {'student': 'Ученик', 'cook': 'Повар', 'admin': 'Администратор'}
-    user_role_ru = role_translate.get(user.role, user.role)
 
     return render_template('common/index.html',
-                           user=user, user_role_ru=user_role_ru, wallet_number=wallet_number,
-                           menu=menu_items, categories=categories,
+                           user=user, user_role_ru=role_translate.get(user.role, user.role),
+                           wallet_number=wallet_number, menu=menu_items, categories=categories,
                            current_category=selected_cat, reviews=reviews,
-                           my_requests=my_reqs)
+                           my_requests=my_reqs, notifications=notifs)
 
 
-# --- ЗАКАЗЫ (УЧЕНИК) ---
+# --- ЛОГИКА ЗАКАЗОВ ---
 
 @app.route('/create_request', methods=['POST'])
 def create_request():
@@ -96,7 +151,7 @@ def create_request():
     return redirect(url_for('index'))
 
 
-# --- ПАНЕЛЬ ПОВАРА ---
+# --- ПАНЕЛЬ ПОВАРА (ВЫДАЧА И СКЛАД) ---
 
 @app.route('/cook/orders')
 def cook_orders():
@@ -115,8 +170,15 @@ def update_status(req_id, new_status):
             if prod and prod.count > 0:
                 prod.count -= 1
                 order.status = 'Одобрено'
+
+                # Создаем уведомление ученику
+                u = User.query.get(order.user)
+                if u and u.email:
+                    db.session.add(Notification(email=u.email, subject="Заказ готов!",
+                                                message=f"Ваш заказ ({order.product}) выдан. Приятного аппетита!",
+                                                status='sent'))
             else:
-                return "<h1>Товар закончился!</h1><a href='/cook/orders'>Назад</a>", 400
+                return "<h1>Ошибка: Товар закончился!</h1><a href='/cook/orders'>Назад</a>", 400
         elif new_status == 'rejected':
             order.status = 'Отклонено'
         db.session.commit()
@@ -132,18 +194,9 @@ def cook_storage():
 @app.route('/cook/request_supply', methods=['POST'])
 def request_supply():
     if session.get('role') not in ['cook', 'admin']: return redirect(url_for('login'))
-    name = request.form.get('name')
-    count = request.form.get('count')
-    cat = request.form.get('category', 'Еда')  # Категория из выпадающего списка
-
+    name, count, cat = request.form.get('name'), request.form.get('count'), request.form.get('category', 'Еда')
     if name and count:
-        # Создаем заявку, которую увидит админ в своей панели
-        db.session.add(SupplyRequest(
-            item_name=name,
-            quantity=int(count),
-            category=cat,
-            status='В ожидании'
-        ))
+        db.session.add(SupplyRequest(item_name=name, quantity=int(count), category=cat))
         db.session.commit()
     return redirect(url_for('cook_storage'))
 
@@ -158,7 +211,7 @@ def delete_product(item_id):
     return redirect(url_for('cook_storage'))
 
 
-# --- АДМИН-ПАНЕЛЬ ---
+# --- ПАНЕЛЬ АДМИНИСТРАТОРА (АНАЛИТИКА) ---
 
 @app.route('/admin/panel')
 def admin_panel():
@@ -167,34 +220,21 @@ def admin_panel():
     all_users = User.query.filter(User.id != session['user_id']).all()
     supply_reqs = SupplyRequest.query.filter_by(status='В ожидании').all()
 
-    # Расчет статистики
+    # Статистика
     today = datetime.utcnow().date()
     visitors = db.session.query(func.count(func.distinct(Requests.user))).filter(
         func.date(Requests.date) == today).scalar()
     total_orders = Requests.query.filter_by(status='Одобрено').count()
-
-    # Самый популярный товар
     popular_query = db.session.query(Requests.product, func.count(Requests.product)).group_by(
         Requests.product).order_by(func.count(Requests.product).desc()).first()
-    popular_item = popular_query[0] if popular_query else "Нет данных"
 
     stats = {
         'visitors': visitors or 0,
         'total_orders': total_orders,
-        'popular': popular_item,
+        'popular': popular_query[0] if popular_query else "Нет данных",
         'today_date': today.strftime('%d.%m.%Y')
     }
-
     return render_template('admin/admin_panel.html', users=all_users, supply_requests=supply_reqs, stats=stats)
-
-@app.route('/admin/change_role/<int:user_id>/<string:new_role>')
-def change_role(user_id, new_role):
-    if session.get('role') != 'admin': return redirect(url_for('login'))
-    target = User.query.get(user_id)
-    if target:
-        target.role = new_role
-        db.session.commit()
-    return redirect(url_for('admin_panel'))
 
 
 @app.route('/admin/approve_supply/<int:sup_id>/<string:status>')
@@ -215,18 +255,17 @@ def approve_supply(sup_id, status):
     return redirect(url_for('admin_panel'))
 
 
-# --- СИСТЕМНЫЕ ФУНКЦИИ ---
-
-@app.route('/add_review', methods=['POST'])
-def add_review():
-    if 'user_id' not in session: return redirect(url_for('login'))
-    text = request.form.get('review_text')
-    if text:
-        user = User.query.get(session['user_id'])
-        db.session.add(Review(author=user.login, text=text))
+@app.route('/admin/change_role/<int:user_id>/<string:new_role>')
+def change_role(user_id, new_role):
+    if session.get('role') != 'admin': return redirect(url_for('login'))
+    u = User.query.get(user_id)
+    if u:
+        u.role = new_role
         db.session.commit()
-    return redirect(url_for('index'))
+    return redirect(url_for('admin_panel'))
 
+
+# --- АВТОРИЗАЦИЯ И РЕГИСТРАЦИЯ ---
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -241,10 +280,14 @@ def login():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        l, p = request.form.get('login'), request.form.get('password')
+        l, p, e = request.form.get('login'), request.form.get('password'), request.form.get('email')
         if User.query.filter_by(login=l).first(): return "Логин занят"
+
         role = 'admin' if User.query.count() == 0 else 'student'
-        db.session.add(User(login=l, password=generate_password_hash(p), role=role))
+        new_user = User(login=l, password=generate_password_hash(p), role=role)
+        new_user.email = e  # Добавляем email для уведомлений
+
+        db.session.add(new_user)
         db.session.commit()
         return redirect(url_for('login'))
     return render_template('common/register.html')
@@ -254,6 +297,17 @@ def register():
 def logout():
     session.clear()
     return redirect(url_for('login'))
+
+
+@app.route('/add_review', methods=['POST'])
+def add_review():
+    if 'user_id' not in session: return redirect(url_for('login'))
+    text = request.form.get('review_text')
+    if text:
+        u = User.query.get(session['user_id'])
+        db.session.add(Review(author=u.login, text=text))
+        db.session.commit()
+    return redirect(url_for('index'))
 
 
 if __name__ == '__main__':

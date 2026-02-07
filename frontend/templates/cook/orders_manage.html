@@ -2,92 +2,127 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Панель Повара — Заказы</title>
+    <title>Панель Повара — Учет заказов</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: auto; }
-        .navbar { background: #2c3e50; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 20px; }
-        .navbar a { color: white; text-decoration: none; font-weight: bold; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 25px; }
-        h2 { color: #2c3e50; border-bottom: 2px solid #ff9f43; padding-bottom: 10px; }
+        .container { max-width: 1100px; margin: auto; }
+
+        /* Навигация */
+        .navbar { background: #2c3e50; padding: 15px 25px; border-radius: 12px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .navbar a { color: white; text-decoration: none; font-weight: bold; margin-right: 20px; transition: 0.3s; }
+        .navbar a:hover { color: #ff9f43; }
+
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 30px; border: 1px solid #e0e0e0; }
+        h2 { color: #2c3e50; margin-top: 0; display: flex; align-items: center; gap: 10px; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background: #f8f9fa; color: #666; font-size: 13px; }
+        th { text-align: left; background: #f8f9fa; color: #7f8c8d; padding: 12px; font-size: 13px; text-transform: uppercase; }
+        td { padding: 15px 12px; border-bottom: 1px solid #eee; font-size: 15px; vertical-align: middle; }
 
-        .btn { text-decoration: none; padding: 8px 15px; border-radius: 6px; color: white; font-weight: bold; }
+        /* Кнопки действий */
+        .actions { display: flex; gap: 8px; }
+        .btn { text-decoration: none; padding: 10px 18px; border-radius: 8px; color: white; font-weight: bold; font-size: 14px; transition: 0.2s; border: none; cursor: pointer; }
         .btn-approve { background: #27ae60; }
+        .btn-approve:hover { background: #219150; }
         .btn-reject { background: #e74c3c; }
+        .btn-reject:hover { background: #c0392b; }
 
-        .allergy-alert { background: #fff3cd; color: #856404; padding: 4px 8px; border-radius: 4px; font-size: 12px; border: 1px solid #ffeeba; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        /* Метки особенностей питания */
+        .allergy-tag { background: #fdf2f2; color: #ae2b26; border: 1px solid #f8d7da; padding: 5px 10px; border-radius: 6px; font-size: 13px; font-weight: 600; display: inline-block; }
+        .pref-tag { background: #eef9fd; color: #2c7a94; border: 1px solid #d1ecf1; padding: 5px 10px; border-radius: 6px; font-size: 13px; display: inline-block; margin-top: 4px; }
+        .no-data { color: #bdc3c7; font-style: italic; font-size: 13px; }
+
+        .badge { padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; }
         .status-одобрено { background: #d4edda; color: #155724; }
+        .status-отклонено { background: #f8d7da; color: #721c24; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="navbar">
-        <a href="/cook/orders" style="color: #ff9f43;">📋 Очередь заказов</a>
-        <a href="/cook/storage">📦 Склад и Закупки</a>
-        <a href="/">🏠 В кабинет</a>
+        <div>
+            <a href="/cook/orders" style="border-bottom: 2px solid #ff9f43; padding-bottom: 5px;">📋 Очередь заказов</a>
+            <a href="/cook/storage">📦 Склад и Закупки</a>
+        </div>
+        <a href="/" style="background: rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 8px;">🏠 В личный кабинет</a>
     </div>
 
     <div class="card">
-        <h2>🔥 Текущие заказы (В ожидании)</h2>
+        <h2>🔥 Новые заказы (Ожидают выдачи)</h2>
         <table>
             <thead>
                 <tr>
                     <th>Время</th>
-                    <th>Ученик</th>
+                    <th>Ученик (Логин / Email)</th>
                     <th>Блюдо</th>
-                    <th>Особенности</th>
+                    <th>Особенности питания</th>
                     <th>Действие</th>
                 </tr>
             </thead>
             <tbody>
                 {% for r in requests if r.status == 'В ожидании' %}
+                {% set u = User.query.get(r.user) %}
                 <tr>
-                    <td>{{ r.date.strftime('%H:%M') }}</td>
-                    <td><strong>{{ User.query.get(r.user).login }}</strong></td>
-                    <td>{{ r.product }}</td>
+                    <td><strong>{{ r.date.strftime('%H:%M') }}</strong></td>
                     <td>
-                        {% set u = User.query.get(r.user) %}
-                        {% if u.allergies %}
-                            <span class="allergy-alert">⚠️ {{ u.allergies }}</span>
-                        {% else %}
-                            <span style="color: #999;">Нет</span>
+                        <div style="font-weight: bold;">{{ u.login }}</div>
+                        <div style="font-size: 11px; color: #95a5a6;">{{ u.email or 'email не указан' }}</div>
+                    </td>
+                    <td><span style="font-size: 16px; color: #2c3e50;">{{ r.product }}</span></td>
+                    <td>
+                        {% if u.allergen %}
+                            <div class="allergy-tag">🚫 Аллергия: {{ u.allergen }}</div><br>
+                        {% endif %}
+                        {% if u.preferences %}
+                            <div class="pref-tag">✨ Пожелание: {{ u.preferences }}</div>
+                        {% endif %}
+                        {% if not u.allergen and not u.preferences %}
+                            <span class="no-data">Особенностей нет</span>
                         {% endif %}
                     </td>
-                    <td>
-                        <a href="/cook/update_status/{{ r.id }}/approved" class="btn btn-approve">Выдать</a>
-                        <a href="/cook/update_status/{{ r.id }}/rejected" class="btn btn-reject">Отмена</a>
+                    <td class="actions">
+                        <a href="/cook/update_status/{{ r.id }}/approved" class="btn btn-approve">✅ Выдать</a>
+                        <a href="/cook/update_status/{{ r.id }}/rejected" class="btn btn-reject">❌ Отказать</a>
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="5" style="text-align: center; color: #999; padding: 20px;">Новых заказов нет</td></tr>
+                <tr>
+                    <td colspan="5" style="text-align: center; color: #95a5a6; padding: 40px;">
+                        В очереди пока пусто. Можно отдохнуть! ☕
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 
-    <div class="card" style="opacity: 0.8;">
+    <div class="card" style="background: #fafafa;">
         <h3>✅ Выдано сегодня</h3>
         <table>
             <thead>
                 <tr>
                     <th>Время</th>
                     <th>Блюдо</th>
+                    <th>Ученик</th>
                     <th>Статус</th>
                 </tr>
             </thead>
             <tbody>
                 {% for r in requests if r.status != 'В ожидании' %}
+                {% set u = User.query.get(r.user) %}
                 <tr>
                     <td>{{ r.date.strftime('%H:%M') }}</td>
                     <td>{{ r.product }}</td>
-                    <td><span class="badge status-{{ r.status.lower() }}">{{ r.status }}</span></td>
+                    <td>{{ u.login if u else 'Удален' }}</td>
+                    <td>
+                        <span class="badge status-{{ r.status.lower() }}">
+                            {{ r.status }}
+                        </span>
+                    </td>
                 </tr>
+                {% else %}
+                <tr><td colspan="4" style="text-align: center; color: #bdc3c7;">Сегодня еще ничего не выдавалось</td></tr>
                 {% endfor %}
             </tbody>
         </table>
