@@ -15,7 +15,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     login = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=True)  # ВОТ ЭТО ПОЛЕ ОШИБКА НЕ ВИДЕЛА
+    email = db.Column(db.String(120), unique=True, nullable=True)
     role = db.Column(db.String(10), nullable=False, default='student')
     wallet = db.Column(db.String(255), nullable=False, unique=True)
     allergen = db.Column(db.String(255), nullable=True)
@@ -73,7 +73,7 @@ class SupplyRequest(db.Model):
 # ДОБАВЬ ЭТО СЮДА:
 class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), nullable=False) # Убрали ForeignKey для упрощения связки
+    email = db.Column(db.String(120), nullable=False)
     subject = db.Column(db.String(200), nullable=False)
     message = db.Column(db.Text, nullable=False)
     status = db.Column(db.String(20), default='pending')
