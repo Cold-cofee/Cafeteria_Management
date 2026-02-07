@@ -2,24 +2,38 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Управление складом - Повар</title>
+    <title>Управление складом</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 0; }
-        /* Шапка навигации */
         .navbar { background: #2c3e50; padding: 15px; display: flex; justify-content: center; gap: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .navbar a { color: white; text-decoration: none; font-weight: bold; padding: 8px 15px; border-radius: 5px; transition: 0.3s; }
         .navbar a:hover { background: #34495e; }
-        .navbar a.active { background: #3498db; }
+        .navbar a.active { background: #e67e22; }
 
-        .container { max-width: 900px; margin: 30px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
-        .add-form { display: flex; gap: 10px; margin-bottom: 30px; background: #f9f9f9; padding: 20px; border-radius: 8px; }
-        input, select, button { padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
-        .btn-add { background: #27ae60; color: white; border: none; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; }
+        .container { max-width: 1000px; margin: 30px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { color: #2c3e50; border-bottom: 2px solid #e67e22; padding-bottom: 10px; }
+
+        /* Стили формы запроса */
+        .request-box {
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            border-left: 5px solid #e67e22;
+        }
+        .form-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        input, select { padding: 10px; border-radius: 6px; border: 1px solid #ddd; font-size: 14px; }
+        .btn-send { background: #e67e22; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+
+        /* Стили таблицы */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background: #3498db; color: white; }
-        .btn-delete { color: #e74c3c; text-decoration: none; font-weight: bold; border: 1px solid #e74c3c; padding: 5px; border-radius: 4px; }
+        th { background: #f8f9fa; color: #666; font-size: 14px; text-transform: uppercase; }
+
+        .low-stock { color: #e74c3c; font-weight: bold; }
+        .btn-delete { color: #e74c3c; text-decoration: none; font-size: 13px; border: 1px solid #e74c3c; padding: 5px 10px; border-radius: 4px; }
+        .btn-delete:hover { background: #e74c3c; color: white; }
     </style>
 </head>
 <body>
@@ -28,33 +42,56 @@
     <a href="/cook/orders">📋 Очередь заказов</a>
     <a href="/cook/storage" class="active">📦 Управление складом</a>
     <a href="/">🏠 В личный кабинет</a>
-    <a href="/logout" style="color: #ff7675;">Выйти</a>
 </div>
 
 <div class="container">
-    <h2>Управление складом</h2>
-    <form action="/cook/add_product" method="POST" class="add-form">
-        <input type="text" name="name" placeholder="Название блюда" required style="flex: 2;">
-        <input type="number" name="count" placeholder="Кол-во" required style="width: 80px;">
-        <select name="category">
-            <option value="Еда">Еда</option>
-            <option value="Напитки">Напитки</option>
-            <option value="Выпечка">Выпечка</option>
-        </select>
-        <button type="submit" class="btn-add">Добавить</button>
-    </form>
+    <h2>Склад продуктов</h2>
+
+    <div class="request-box">
+        <h3 style="margin-top: 0; color: #e67e22;">📦 Запросить пополнение у админа</h3>
+        <form action="/cook/request_supply" method="POST" class="form-row">
+            <input type="text" name="name" placeholder="Название товара" required style="flex-grow: 2;">
+
+            <input type="number" name="count" placeholder="Кол-во" required style="width: 80px;">
+
+            <select name="category" required>
+                <option value="" disabled selected>Категория</option>
+                <option value="Еда">Еда</option>
+                <option value="Напитки">Напитки</option>
+                <option value="Десерты">Десерты</option>
+                <option value="Гарниры">Гарниры</option>
+            </select>
+
+            <button type="submit" class="btn-send">Отправить запрос админу</button>
+        </form>
+        <p style="font-size: 12px; color: #7f8c8d; margin-top: 10px;">* Товар появится на складе только после того, как администратор одобрит вашу заявку.</p>
+    </div>
 
     <table>
         <thead>
-            <tr><th>Название</th><th>Категория</th><th>Остаток</th><th>Действие</th></tr>
+            <tr>
+                <th>Название</th>
+                <th>Категория</th>
+                <th>Остаток</th>
+                <th>Действие</th>
+            </tr>
         </thead>
         <tbody>
             {% for item in storage %}
             <tr>
                 <td><strong>{{ item.name }}</strong></td>
-                <td>{{ item.type_of_product }}</td>
-                <td>{{ item.count }} шт.</td>
-                <td><a href="/cook/delete_product/{{ item.id }}" class="btn-delete">Удалить</a></td>
+                <td><span style="background: #eee; padding: 3px 8px; border-radius: 12px; font-size: 12px;">{{ item.type_of_product }}</span></td>
+        <td class="{{ 'low-stock' if item.count < 5 else '' }}">
+                    {{ item.count }} шт.
+                    {% if item.count < 5 %}<small>(Мало!)</small>{% endif %}
+                </td>
+                <td>
+                    <a href="/cook/delete_product/{{ item.id }}" class="btn-delete" onclick="return confirm('Вы уверены, что хотите полностью удалить товар из меню?')">Удалить</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" style="text-align: center; color: #999; padding: 30px;">Склад пуст. Запросите товары у администратора.</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -63,4 +100,3 @@
 
 </body>
 </html>
-
