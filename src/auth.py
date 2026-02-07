@@ -28,8 +28,7 @@ def index():
 
     user = User.query.get(session['user_id'])
 
-    # Исправление ошибки с кошельком: генерируем номер на основе ID
-    # Это заменит сломанный метод get_wallet()
+
     wallet_number = f"💳 ШК-{user.id + 1000:05d}"
 
     selected_cat = request.args.get('category', 'Все')
