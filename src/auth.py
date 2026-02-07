@@ -28,7 +28,7 @@ def index():
 
     user = User.query.get(session['user_id'])
 
-
+    # Исправленный кошелек (без ошибки атрибута 'key')
     wallet_number = f"💳 ШК-{user.id + 1000:05d}"
 
     selected_cat = request.args.get('category', 'Все')
@@ -60,7 +60,7 @@ def create_request():
 
     prod = Storage.query.filter_by(name=request.form.get('item_name')).first()
 
-
+    # Проверяем наличие, но НЕ уменьшаем count здесь
     if prod and prod.count > 0:
         new_req = Requests(user=session['user_id'], product=prod.name,
                            amount=1, status='В ожидании', date=datetime.now())
