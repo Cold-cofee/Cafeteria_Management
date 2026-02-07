@@ -82,26 +82,4 @@ class StudentService:
         
         return wallet.money, last_4_digits
     
-    @staticmethod
-    def buy_item(user, item_name, price):
-        """
-        Покупка товара: списываем деньги и пишем в историю.
-        Возвращает (Успех, Сообщение).
-        """
-        wallet = StudentService._get_or_create_wallet(user)
-
-        if wallet.money >= price:
-            wallet.money -= price
-            
-            # Запись в историю
-            record = History(
-                user=user.id,
-                type_of_transaction=f"Покупка: {item_name}",
-                amount=price,
-                date=datetime.now()
-            )
-            db.session.add(record)
-            db.session.commit()
-            return True, f"Вы купили {item_name} за {price} ₽"
-        else:
-            return False, "Недостаточно средств"
+   
