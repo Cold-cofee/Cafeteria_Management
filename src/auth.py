@@ -9,7 +9,7 @@ from src.database.store import Storage
 from src.database.requests import Requests
 
 
-# --- МОДЕЛИ ДАННЫХ ---
+# --- МОДЕЛИ ДАННЫХ (Внутренние) ---
 
 class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -22,7 +22,7 @@ class SupplyRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     item_name = db.Column(db.String(100), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
-    category = db.Column(db.String(50), default='Еда')  # Новое поле для категории
+    category = db.Column(db.String(50), default='Еда')
     status = db.Column(db.String(20), default='В ожидании')
     date = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -31,13 +31,13 @@ with app.app_context():
     db.create_all()
 
 
-# Глобальный доступ к моделям в HTML
+# Глобальный доступ к моделям для HTML шаблонов
 @app.context_processor
 def inject_models():
-    return dict(User=User, SupplyRequest=SupplyRequest, Storage=Storage)
+    return dict(User=User, SupplyRequest=SupplyRequest, Storage=Storage, Requests=Requests)
 
 
-# --- ЛОГИКА ЛИЧНОГО КАБИНЕТА ---
+# --- ЛИЧНЫЙ КАБИНЕТ (INDEX) ---
 
 @app.route('/')
 def index():
@@ -49,6 +49,8 @@ def index():
         session.clear()
         return redirect(url_for('login'))
 
+    # ИСПРАВЛЕННОЕ СОХРАНЕНИЕ АЛЛЕРГИЙ
+    # Мы проверяем и GET (из формы с кнопкой) и сохраняем в базу
     update_val = request.args.get('update_allergies')
     if update_val is not None:
         user.allergies = update_val
@@ -57,6 +59,7 @@ def index():
 
     wallet_number = f"💳 ШК-{user.id + 1000:05d}"
 
+    # Фильтрация меню
     selected_cat = request.args.get('category', 'Все')
     query = Storage.query.filter(Storage.count > 0)
     if selected_cat != 'Все':
@@ -77,7 +80,7 @@ def index():
                            my_requests=my_reqs)
 
 
-# --- ЛОГИКА ЗАКАЗОВ ---
+# --- ЗАКАЗЫ (УЧЕНИК) ---
 
 @app.route('/create_request', methods=['POST'])
 def create_request():
@@ -93,6 +96,15 @@ def create_request():
     return redirect(url_for('index'))
 
 
+# --- ПАНЕЛЬ ПОВАРА ---
+
+@app.route('/cook/orders')
+def cook_orders():
+    if session.get('role') not in ['cook', 'admin']: return redirect(url_for('login'))
+    reqs = Requests.query.order_by(Requests.date.desc()).all()
+    return render_template('cook/orders_manage.html', requests=reqs)
+
+
 @app.route('/cook/update_status/<int:req_id>/<string:new_status>')
 def update_status(req_id, new_status):
     if session.get('role') not in ['cook', 'admin']: return redirect(url_for('login'))
@@ -104,14 +116,43 @@ def update_status(req_id, new_status):
                 prod.count -= 1
                 order.status = 'Одобрено'
             else:
-                return "<h1>Ошибка: Товар закончился!</h1><a href='/cook/orders'>Назад</a>", 400
+                return "<h1>Товар закончился!</h1><a href='/cook/orders'>Назад</a>", 400
         elif new_status == 'rejected':
             order.status = 'Отклонено'
         db.session.commit()
     return redirect(url_for('cook_orders'))
 
 
-# --- АДМИН-ПАНЕЛЬ И ПОПОЛНЕНИЕ ---
+@app.route('/cook/storage')
+def cook_storage():
+    if session.get('role') not in ['cook', 'admin']: return redirect(url_for('login'))
+    return render_template('cook/storage_manage.html', storage=Storage.query.all())
+
+
+@app.route('/cook/request_supply', methods=['POST'])
+def request_supply():
+    if session.get('role') not in ['cook', 'admin']: return redirect(url_for('login'))
+    name = request.form.get('name')
+    count = request.form.get('count')
+    cat = request.form.get('category', 'Еда')
+
+    if name and count:
+        db.session.add(SupplyRequest(item_name=name, quantity=int(count), category=cat))
+        db.session.commit()
+    return redirect(url_for('cook_storage'))
+
+
+@app.route('/cook/delete_product/<int:item_id>')
+def delete_product(item_id):
+    if session.get('role') not in ['cook', 'admin']: return redirect(url_for('login'))
+    item = Storage.query.get(item_id)
+    if item:
+        db.session.delete(item)
+        db.session.commit()
+    return redirect(url_for('cook_storage'))
+
+
+# --- АДМИН-ПАНЕЛЬ ---
 
 @app.route('/admin/panel')
 def admin_panel():
@@ -137,12 +178,10 @@ def approve_supply(sup_id, status):
     sup = SupplyRequest.query.get(sup_id)
     if sup and sup.status == 'В ожидании':
         if status == 'approved':
-            # Ищем товар по имени
             item = Storage.query.filter_by(name=sup.item_name).first()
             if item:
                 item.count += sup.quantity
             else:
-                # Если товара нет, создаем его с указанной категорией
                 db.session.add(Storage(name=sup.item_name, count=sup.quantity, type_of_product=sup.category))
             sup.status = 'Одобрено'
         else:
@@ -151,46 +190,7 @@ def approve_supply(sup_id, status):
     return redirect(url_for('admin_panel'))
 
 
-# --- ПАНЕЛЬ ПОВАРА ---
-
-@app.route('/cook/orders')
-def cook_orders():
-    if session.get('role') not in ['cook', 'admin']: return redirect(url_for('login'))
-    reqs = Requests.query.order_by(Requests.date.desc()).all()
-    return render_template('cook/orders_manage.html', requests=reqs)
-
-
-@app.route('/cook/storage')
-def cook_storage():
-    if session.get('role') not in ['cook', 'admin']: return redirect(url_for('login'))
-    return render_template('cook/storage_manage.html', storage=Storage.query.all())
-
-
-@app.route('/cook/request_supply', methods=['POST'])
-def request_supply():
-    if session.get('role') not in ['cook', 'admin']: return redirect(url_for('login'))
-    name = request.form.get('name')
-    count = request.form.get('count')
-    cat = request.form.get('category', 'Еда')
-
-    if name and count:
-        # Сохраняем имя и категорию отдельно
-        db.session.add(SupplyRequest(item_name=name, quantity=int(count), category=cat))
-        db.session.commit()
-    return redirect(url_for('cook_storage'))
-
-
-@app.route('/cook/delete_product/<int:item_id>')
-def delete_product(item_id):
-    if session.get('role') not in ['cook', 'admin']: return redirect(url_for('login'))
-    item = Storage.query.get(item_id)
-    if item:
-        db.session.delete(item)
-        db.session.commit()
-    return redirect(url_for('cook_storage'))
-
-
-# --- СИСТЕМА (Вход, Регистрация, Отзывы) ---
+# --- СИСТЕМНЫЕ ФУНКЦИИ ---
 
 @app.route('/add_review', methods=['POST'])
 def add_review():
@@ -233,4 +233,3 @@ def logout():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
-

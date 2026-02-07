@@ -11,7 +11,8 @@ class User(db.Model):
     password = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(10), nullable=False)
     wallet = db.Column(db.String(255), nullable=False, unique=True)
-    allergies = db.Column(db.)
+    allergies = db.Column(db.Text, nullable=True)
+
     def __init__(self, login, password, role="student", wallet=None):
         self.login = login
         self.password = password
