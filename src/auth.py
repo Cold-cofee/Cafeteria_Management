@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from flask import render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
-
+from sqlalchemy import func
 from src.config import app, db
 from src.database.users import User
 from src.database.store import Storage
@@ -157,10 +157,29 @@ def delete_product(item_id):
 @app.route('/admin/panel')
 def admin_panel():
     if session.get('role') != 'admin': return "Доступ запрещен", 403
+
     all_users = User.query.filter(User.id != session['user_id']).all()
     supply_reqs = SupplyRequest.query.filter_by(status='В ожидании').all()
-    return render_template('admin/admin_panel.html', users=all_users, supply_requests=supply_reqs)
 
+    # Расчет статистики
+    today = datetime.utcnow().date()
+    visitors = db.session.query(func.count(func.distinct(Requests.user))).filter(
+        func.date(Requests.date) == today).scalar()
+    total_orders = Requests.query.filter_by(status='Одобрено').count()
+
+    # Самый популярный товар
+    popular_query = db.session.query(Requests.product, func.count(Requests.product)).group_by(
+        Requests.product).order_by(func.count(Requests.product).desc()).first()
+    popular_item = popular_query[0] if popular_query else "Нет данных"
+
+    stats = {
+        'visitors': visitors or 0,
+        'total_orders': total_orders,
+        'popular': popular_item,
+        'today_date': today.strftime('%d.%m.%Y')
+    }
+
+    return render_template('admin/admin_panel.html', users=all_users, supply_requests=supply_reqs, stats=stats)
 
 @app.route('/admin/change_role/<int:user_id>/<string:new_role>')
 def change_role(user_id, new_role):
