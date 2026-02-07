@@ -19,7 +19,9 @@ class Review(db.Model):
 
 with app.app_context():
     db.create_all()
-
+@app.context_processor
+def inject_user():
+    return dict(User=User)
 
 @app.route('/')
 def index():
@@ -28,7 +30,19 @@ def index():
 
     user = User.query.get(session['user_id'])
 
-    # Исправленный кошелек (без ошибки атрибута 'key')
+    # Защита: если пользователя нет в базе (база была удалена), выходим
+    if not user:
+        session.clear()
+        return redirect(url_for('login'))
+
+    # НОВОЕ: Обработка обновления аллергий
+    update_val = request.args.get('update_allergies')
+    if update_val is not None:
+        user.allergies = update_val
+        db.session.commit()
+        return redirect(url_for('index'))
+
+    # Кошелек
     wallet_number = f"💳 ШК-{user.id + 1000:05d}"
 
     selected_cat = request.args.get('category', 'Все')
@@ -41,7 +55,6 @@ def index():
     reviews = Review.query.order_by(Review.date.desc()).all()
     my_reqs = Requests.query.filter_by(user=user.id).order_by(Requests.date.desc()).all()
 
-    # Перевод ролей для интерфейса
     role_translate = {'student': 'Ученик', 'cook': 'Повар', 'admin': 'Администратор'}
     user_role_ru = role_translate.get(user.role, user.role)
 
