@@ -134,10 +134,16 @@ def request_supply():
     if session.get('role') not in ['cook', 'admin']: return redirect(url_for('login'))
     name = request.form.get('name')
     count = request.form.get('count')
-    cat = request.form.get('category', 'Еда')
+    cat = request.form.get('category', 'Еда')  # Категория из выпадающего списка
 
     if name and count:
-        db.session.add(SupplyRequest(item_name=name, quantity=int(count), category=cat))
+        # Создаем заявку, которую увидит админ в своей панели
+        db.session.add(SupplyRequest(
+            item_name=name,
+            quantity=int(count),
+            category=cat,
+            status='В ожидании'
+        ))
         db.session.commit()
     return redirect(url_for('cook_storage'))
 
