@@ -39,9 +39,8 @@
 <body>
 
 <div class="navbar">
-    <a href="/cook/orders">📋 Очередь заказов</a>
-    <a href="/cook/storage" class="active">📦 Управление складом</a>
-    <a href="/">🏠 В личный кабинет</a>
+    <a href="{{ url_for('wallet_bp.procurement_page') }}" class="active">📦 Управление складом</a>
+    <a href="{{ url_for('index') }}">🏠 В личный кабинет</a>
 </div>
 
 <div class="container">
@@ -81,7 +80,7 @@
             <tr>
                 <td><strong>{{ item.name }}</strong></td>
                 <td><span style="background: #eee; padding: 3px 8px; border-radius: 12px; font-size: 12px;">{{ item.type_of_product }}</span></td>
-        <td class="{{ 'low-stock' if item.count < 5 else '' }}">
+                <td class="{{ 'low-stock' if item.count < 5 else '' }}">
                     {{ item.count }} шт.
                     {% if item.count < 5 %}<small>(Мало!)</small>{% endif %}
                 </td>
