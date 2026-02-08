@@ -135,9 +135,9 @@ def login():
     if request.method == 'POST':
         user = User.query.filter_by(login=request.form.get('login')).first()
         if user and check_password_hash(user.password, request.form.get('password')):
-            # ВАЖНО: Вместо просто session['user_id'] используем это:
-            login_user(user)
-            session['user_id'] = user.id # Оставляем для совместимости
+            login_user(user) # Для Flask-Login
+            session['user_id'] = user.id
+            session['role'] = user.role # <--- ОБЯЗАТЕЛЬНО ДОБАВЬ ЭТО
             return redirect(url_for('index'))
     return render_template('common/login.html')
 
@@ -145,17 +145,29 @@ def login():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        l, p, e = request.form.get('login'), request.form.get('password'), request.form.get('email')
+        # Вытаскиваем данные из полей формы
+        l = request.form.get('login')
+        p = request.form.get('password')
+        e = request.form.get('email')
+
+        # Проверка, не занят ли логин
         if User.query.filter_by(login=l).first():
             flash("Логин занят")
             return redirect(url_for('register'))
 
+        # Назначаем роль (первый юзер в базе будет админом)
         role = 'admin' if User.query.count() == 0 else 'student'
-        # Создаем через User, так как там встроенная логика шифрования кошелька
+
+        # Создаем пользователя
         new_user = User(login=l, password=generate_password_hash(p), role=role, email=e)
 
         db.session.add(new_user)
         db.session.commit()
+
+        # Сразу записываем в сессию, чтобы не логиниться заново
+        session['user_id'] = new_user.id
+        session['role'] = new_user.role
+
         return redirect(url_for('login'))
     return render_template('common/register.html')
 
