@@ -1,5 +1,5 @@
-from config import db
-# Здесь мы инициализируем и проверяем таблицу requests
+from src.config import db
+
 class Requests(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -17,3 +17,4 @@ class Requests(db.Model):
 
     def __repr__(self):
         return f'<Request {self.id}>'
+

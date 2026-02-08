@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Панель администратора</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 25px; }
+        h2, h3 { color: #2c3e50; border-bottom: 2px solid #8e44ad; padding-bottom: 10px; margin-top: 0; }
+
+        /* Сетка статистики */
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-top: 5px solid #8e44ad; }
+        .stat-card h4 { margin: 0; color: #7f8c8d; text-transform: uppercase; font-size: 12px; }
+        .stat-card h1 { margin: 10px 0 0 0; color: #2c3e50; font-size: 28px; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; color: #666; font-size: 13px; }
+
+        .btn { text-decoration: none; padding: 7px 14px; border-radius: 6px; color: white; font-size: 13px; font-weight: bold; transition: 0.2s; border: none; cursor: pointer; }
+        .btn-role { background: #3498db; margin-right: 5px; }
+        .btn-approve { background: #27ae60; }
+        .btn-reject { background: #e74c3c; }
+        .btn-print { background: #34495e; float: right; }
+
+        .badge { background: #efefef; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .back-link { display: inline-block; margin-bottom: 20px; text-decoration: none; color: #8e44ad; font-weight: bold; }
+
+        /* Стиль для печати отчета */
+        @media print {
+            .back-link, .btn, .nav-tabs, form, .no-print { display: none !important; }
+            .card { box-shadow: none; border: 1px solid #ccc; }
+            body { background: white; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="no-print">
+        <a href="/" class="back-link">← Вернуться в кабинет</a>
+        <button onclick="window.print()" class="btn btn-print">🖨️ Сформировать отчет (Печать)</button>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card" style="border-color: #3498db;">
+            <h4>Посещаемость (сегодня)</h4>
+            <h1>👤 {{ stats.visitors }} чел.</h1>
+        </div>
+        <div class="stat-card" style="border-color: #27ae60;">
+            <h4>Оплаты (выдано блюд)</h4>
+            <h1>💰 {{ stats.total_orders }} шт.</h1>
+        </div>
+        <div class="stat-card" style="border-color: #f1c40f;">
+            <h4>Топ продаж</h4>
+            <h1>⭐ {{ stats.popular }}</h1>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>📦 Согласование заявок на закупки</h3>
+        {% if supply_requests %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Товар</th>
+                    <th>Категория</th>
+                    <th>Кол-во</th>
+                    <th>Дата</th>
+                    <th class="no-print">Действие</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in supply_requests %}
+                <tr>
+                    <td><strong>{{ s.item_name }}</strong></td>
+                    <td><span class="badge">{{ s.category }}</span></td>
+                    <td>{{ s.quantity }} шт.</td>
+                    <td>{{ s.date.strftime('%d.%m %H:%M') }}</td>
+                    <td class="no-print">
+                        <a href="/admin/approve_supply/{{ s.id }}/approved" class="btn btn-approve">Одобрить</a>
+                        <a href="/admin/approve_supply/{{ s.id }}/rejected" class="btn btn-reject">Отказать</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color: #999; margin-top: 15px;">Новых заявок на закупки не поступало.</p>
+        {% endif %}
+    </div>
+
+    <div class="card no-print">
+        <h3>🛡️ Управление доступом и ролями</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Логин</th>
+                    <th>Текущая роль</th>
+                    <th>Изменить роль на:</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td><strong>{{ u.login }}</strong></td>
+                    <td><span class="badge">{{ u.role }}</span></td>
+                    <td>
+                        <a href="/admin/change_role/{{ u.id }}/student" class="btn btn-role" style="background: #bdc3c7;">Ученик</a>
+                        <a href="/admin/change_role/{{ u.id }}/cook" class="btn btn-role">Повар</a>
+                        <a href="/admin/change_role/{{ u.id }}/admin" class="btn btn-role" style="background: #8e44ad;">Админ</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div style="display: none; display: block; margin-top: 50px; border-top: 1px solid #000; padding-top: 10px;" class="only-print">
+        <p>Отчет сформирован автоматически системой управления столовой.</p>
+        <p>Дата: {{ stats.today_date }} ____________________ (Подпись администратора)</p>
+    </div>
+</div>
+
+<style>
+    /* Скрыть подпись в обычном режиме */
+    @media screen { .only-print { display: none !important; } }
+</style>
+
+</body>
+</html>

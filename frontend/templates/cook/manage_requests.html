@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Панель Повара</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 30px; background: #fdfdfd; }
+        h1 { color: #333; }
+        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
+        th, td { padding: 15px; text-align: left; border: 1px solid #eee; }
+        th { background: #343a40; color: white; }
+        .btn { padding: 8px 12px; border-radius: 4px; text-decoration: none; color: white; font-weight: bold; margin-right: 5px; }
+        .btn-ok { background: #28a745; }
+        .btn-no { background: #dc3545; }
+        .btn:hover { opacity: 0.8; }
+    </style>
+</head>
+<body>
+
+    <h1>Все заявки студентов</h1>
+    <p><a href="/">На главную</a> | <a href="/logout">Выйти</a></p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Блюдо</th>
+                <th>Статус</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in requests %}
+            <tr>
+                <td>#{{ r.id }}</td>
+                <td>{{ r.item }}</td>
+                <td>{{ r.status }}</td>
+                <td>
+                    {% if r.status == 'pending' %}
+                    <a href="{{ url_for('update_request_status', req_id=r.id, new_status='approved') }}" class="btn btn-ok">Одобрить</a>
+                    <a href="{{ url_for('update_request_status', req_id=r.id, new_status='rejected') }}" class="btn btn-no">Отклонить</a>
+                    {% else %}
+                    <span style="color: #aaa;">Обработано</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Регистрация - Система Столовой</title>
+    <style>
+        body { font-family: sans-serif; margin: 40px; }
+        input, select, textarea { margin-bottom: 15px; width: 300px; display: block; padding: 8px; }
+    </style>
+</head>
+<body>
+    <h2>Регистрация нового пользователя</h2>
+    <form method="POST">
+        <input type="text" name="login" placeholder="Введите логин" required>
+        <input type="password" name="password" placeholder="Пароль">
+
+        <label>Ваша роль в системе:</label>
+        <select name="role">
+            <option value="student">Ученик</option>
+            <option value="cook">Повар</option>
+            <option value="admin">Администратор</option>
+        </select>
+
+        <label>Пищевые аллергии (если есть):</label>
+        <textarea name="allergies" placeholder="Например: орехи, лактоза..."></textarea>
+
+        <button type="submit" style="padding: 10px 20px; cursor: pointer;">Зарегистрироваться</button>
+    </form>
+</body>
+</html>
