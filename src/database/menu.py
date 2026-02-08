@@ -1,4 +1,4 @@
-from config import db
+from src.config import db
 # Здесь мы инициализируем и проверяем таблицу menu
 class Menu(db.Model):
     id = db.Column(db.Integer, primary_key=True)

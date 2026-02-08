@@ -1,4 +1,4 @@
-from config import db
+from src.config import db
 # Здесь мы инициализируем и проверяем таблицу store
 class Storage(db.Model):
 

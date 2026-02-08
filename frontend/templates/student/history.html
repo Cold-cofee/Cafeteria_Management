@@ -2,61 +2,58 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Мой Кошелек</title>
+    <title>Мой Кошелек — История</title>
     <style>
-        /* Добавили flex-direction: column, чтобы элементы вставали друг под друга */
-        body { font-family: sans-serif; background-color: #f4f4f9; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-        .wallet-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 350px; }
-        h1 { color: #333; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f9; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .wallet-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 350px; margin-bottom: 20px; }
+        h1 { color: #333; margin-top: 0; }
         .balance { font-size: 48px; color: #2ecc71; margin: 10px 0; font-weight: bold; }
         .card-info { color: #888; margin-bottom: 20px; font-size: 14px; letter-spacing: 1px; }
         .controls { display: flex; flex-direction: column; gap: 10px; }
-        input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; text-align: center; }
+        input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; text-align: center; outline: none; }
         .btn-group { display: flex; gap: 10px; }
-        button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; transition: 0.2s; color: white; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; transition: 0.2s; color: white; font-weight: bold; }
         .btn-deposit { background-color: #2ecc71; }
         .btn-deposit:hover { background-color: #27ae60; }
         .btn-withdraw { background-color: #e74c3c; }
         .btn-withdraw:hover { background-color: #c0392b; }
-        .alert {
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: bold;}
-        .error {
-            background-color: #ffe6e6;
-            color: #c0392b;
-            border: 1px solid #c0392b;}
-        .success {
-            background-color: #e8f8f5;
-            color: #27ae60;
-            border: 1px solid #27ae60;}
+
+        .alert { padding: 12px; margin-bottom: 15px; border-radius: 8px; font-size: 14px; font-weight: bold; }
+        .error { background-color: #ffe6e6; color: #c0392b; border: 1px solid #c0392b; }
+        .success { background-color: #e8f8f5; color: #27ae60; border: 1px solid #27ae60; }
+
+        .history-container { width: 400px; }
+        .history-table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .history-table th { background-color: #f1f1f1; padding: 12px; text-align: left; font-size: 13px; color: #666; }
+        .history-table td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+
+        .back-link { margin-top: 20px; text-decoration: none; color: #3498db; font-size: 14px; font-weight: bold; }
+        .back-link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 
     <div class="wallet-card">
-        <h1>Студенческий кошелек</h1>
-        
+        <h1>Кошелек</h1>
+
         {% if message %}
-            <div class="alert {{ message_type }}">
+            <div class="alert {{ 'success' if message_type == 'success' else 'error' }}">
                 {{ message }}
             </div>
         {% endif %}
-        
+
         <div class="card-info">KAZNA BANK •••• {{ card_number }}</div>
-        
+
         <div class="balance">{{ balance }} ₽</div>
 
         <form method="POST" class="controls">
-            <input type="number" name="amount" placeholder="Введите сумму" required min="1">
-            
+            <input type="number" name="amount" placeholder="Сумма" required min="1">
+
             <div class="btn-group">
                 <button type="submit" name="action" value="deposit" class="btn-deposit">
                     Пополнить (+)
                 </button>
-                
+
                 <button type="submit" name="action" value="withdraw" class="btn-withdraw">
                     Снять (-)
                 </button>
@@ -64,37 +61,38 @@
         </form>
     </div>
 
-    <div style="margin-top: 30px; width: 350px;">
+    <div class="history-container">
         <h3 style="text-align: center; color: #333;">История операций</h3>
-        
+
         {% if history %}
-        <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+        <table class="history-table">
             <thead>
-                <tr style="background-color: #f1f1f1; text-align: left;">
-                    <th style="padding: 10px; font-size: 14px;">Действие</th>
-                    <th style="padding: 10px; font-size: 14px;">Сумма</th>
-                    <th style="padding: 10px; font-size: 14px;">Дата</th>
+                <tr>
+                    <th>Действие</th>
+                    <th>Сумма</th>
+                    <th>Дата</th>
                 </tr>
             </thead>
             <tbody>
                 {% for record in history %}
-                <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 10px; font-size: 14px;"
-                        color: {% if record.action == 'Пополнение' %}#2ecc71{% else %}#e74c3c{% endif %}; font-weight: bold;">
-                        {{ record.action }}
+                <tr>
+                    <td style="font-weight: bold; color: {% if record.type_of_transaction == 'Пополнение' %}#2ecc71{% else %}#e74c3c{% endif %};">
+                        {{ record.type_of_transaction }}
                     </td>
-                    <td style="padding: 10px; font-size: 14px;">{{ record.amount }} ₽</td>
-                    <td style="padding: 10px; font-size: 12px; color: #888;">
-                        {{ record.date.strftime('%d.%m %H:%M') }}
+                    <td>{{ record.amount }} ₽</td>
+                    <td style="color: #888; font-size: 12px;">
+                        {{ record.date.strftime('%d.%m %H:%M') if record.date else '--.--' }}
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
         {% else %}
-            <p style="text-align: center; color: #888;">История пуста</p>
+            <p style="text-align: center; color: #888;">История пока пуста</p>
         {% endif %}
     </div>
+
+    <a href="/" class="back-link">← Вернуться на главную</a>
 
 </body>
 </html>

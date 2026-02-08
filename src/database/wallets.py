@@ -1,5 +1,5 @@
-from config import db
-from database.users import User
+from src.config import db
+from src.database.users import User
 
 class Wallet(db.Model):
     wallet_number = db.Column(db.String(255), db.ForeignKey('user.wallet'), unique=True, nullable=False, primary_key=True)
