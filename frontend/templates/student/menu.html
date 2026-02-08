@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Меню столовой</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f9; padding: 20px; }
+        .grid { display: flex; flex-wrap: wrap; gap: 20px; }
+        .card { 
+            background: white; padding: 20px; border-radius: 10px; 
+            width: 200px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+            text-align: center;
+        }
+        .price { color: #2ecc71; font-weight: bold; font-size: 18px; margin: 10px 0; }
+        .btn-buy { 
+            background: #e67e22; color: white; border: none; 
+            padding: 10px 20px; border-radius: 5px; cursor: pointer; 
+            width: 100%; font-size: 16px;
+        }
+        .btn-buy:hover { background: #d35400; }
+        .nav { margin-bottom: 20px; }
+        a { text-decoration: none; color: #333; font-weight: bold; margin-right: 15px;}
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <h1>🍽 Меню</h1>
+        <a href="{{ url_for('wallet_bp.wallet_page') }}">← Мой кошелек</a>
+    </div>
+
+    <div class="grid">
+        {% for item in items %}
+        <div class="card">
+            <h3>{{ item.name }}</h3>
+            <p style="color: #777;">Осталось: {{ item.count }} шт.</p>
+            
+            <div class="price">{{ item.price }} ₽</div>
+            
+            <form action="{{ url_for('wallet_bp.buy_product', item_id=item.id) }}" method="POST">
+                <button type="submit" class="btn-buy">Купить</button>
+            </form>
+        </div>
+        {% endfor %}
+        
+        {% if not items %}
+            <p>В столовой пока пусто :(</p>
+        {% endif %}
+    </div>
+</body>
+</html>
