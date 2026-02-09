@@ -1,4 +1,5 @@
 import os
+
 from flask_login import login_user
 from datetime import datetime
 from flask import render_template, request, redirect, url_for, session, flash
@@ -12,7 +13,7 @@ from src.config import app, db
 from src.database.users import User
 from src.database.store import Storage
 from src.database.requests import Requests
-
+from flask_login import current_user
 
 # --- ВСПОМОГАТЕЛЬНЫЕ МОДЕЛИ (Которых нет в базе данных проекта) ---
 
@@ -378,3 +379,32 @@ def update_status(req_id, new_status):
         flash(f"Статус заказа №{req_id} обновлен")
 
     return redirect(url_for('cook_orders'))
+
+
+@app.route('/admin/change_role/<int:user_id>/<string:new_role>')
+# @login_required
+def change_role(user_id, new_role):
+    # Проверка прав администратора
+    if current_user.role != 'admin':
+        return "Доступ запрещен", 403
+
+    # Список разрешенных ролей, чтобы не записали что-то лишнее
+    allowed_roles = ['student', 'cook', 'admin']
+    if new_role not in allowed_roles:
+        flash("Некорректная роль")
+        return redirect(url_for('admin_panel'))
+
+    # Ищем пользователя и меняем роль
+    user = User.query.get(user_id)
+    if user:
+        # Не даем админу случайно снять роль с самого себя (чтобы не потерять доступ)
+        if user.id == current_user.id and new_role != 'admin':
+            flash("Вы не можете снять с себя права администратора!")
+        else:
+            user.role = new_role
+            db.session.commit()
+            flash(f"Роль пользователя {user.login} изменена на {new_role}")
+    else:
+        flash("Пользователь не найден")
+
+    return redirect(url_for('admin_panel'))
