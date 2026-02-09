@@ -4,56 +4,71 @@
     <meta charset="UTF-8">
     <title>Заявки на закупку</title>
     <style>
-        body { font-family: sans-serif; margin: 30px; line-height: 1.6; }
-        .form-box { background: #f4f4f4; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
-        th { background: #eee; }
-        .status { font-weight: bold; color: #d35400; }
-        .nav-link { text-decoration: none; color: #007bff; margin-right: 20px;}
+        body { font-family: 'Segoe UI', sans-serif; margin: 30px; line-height: 1.6; background: #f8f9fa; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .form-box { background: #fff3e0; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #ffe0b2; }
+        h1 { color: #2c3e50; font-size: 24px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background: #f2f2f2; color: #555; }
+        .status { font-weight: bold; color: #e67e22; padding: 4px 8px; background: #fff3e0; border-radius: 4px; font-size: 13px; }
+        .nav-link { text-decoration: none; color: #3498db; font-weight: bold; }
+        .btn-submit { background: #e67e22; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-submit:hover { background: #d35400; }
+        input, select { padding: 8px; margin-right: 10px; border: 1px solid #ddd; border-radius: 4px; }
     </style>
 </head>
 <body>
-    <div style="display:flex; justify-content:space-between;">
-        <h1>Заявки на закупку продуктов</h1>
-        <a href="{{ url_for('wallet_bp.admin_page') }}" class="nav-link">На склад (Админ) →</a>
+
+<div class="container">
+    <div style="display:flex; justify-content:space-between; align-items: center;">
+        <h1>📋 Заявки на закупку</h1>
+        <a href="{{ url_for('index') }}" class="nav-link">← Назад на главное меню</a>
     </div>
 
     <div class="form-box">
-        <h3>Новая заявка</h3>
-        <form method="POST" action="{{ url_for('wallet_bp.procurement_page') }}">
-            <input type="text" name="product" placeholder="Название продукта" required>
-            <input type="number" name="amount" placeholder="Количество" required>
-            
-            <button type="submit" style="cursor:pointer;">Отправить администратору</button>
+        <h3>Новая заявка администратору</h3>
+        <form method="POST" action="{{ url_for('request_supply') }}">
+            <input type="text" name="name" placeholder="Что купить?" required>
+
+            <input type="number" name="count" placeholder="Кол-во" required style="width: 80px;">
+
+            <select name="category">
+                <option value="Еда">Еда</option>
+                <option value="Напитки">Напитки</option>
+                <option value="Десерты">Десерты</option>
+            </select>
+
+            <button type="submit" class="btn-submit">Отправить</button>
         </form>
     </div>
 
-    <h3>Текущие заявки</h3>
+    <h3>Статус текущих заявок</h3>
     <table>
         <thead>
             <tr>
-                <th>Дата</th>
-                <th>Продукт</th>
-                <th>Кол-во</th>
+                <th>Название</th>
+                <th>Количество</th>
+                <th>Категория</th>
                 <th>Статус</th>
             </tr>
         </thead>
         <tbody>
             {% for req in requests %}
             <tr>
-                <td>{{ req.date.strftime('%d.%m.%Y') if req.date else '-' }}</td>
-                <td>{{ req.product }}</td>
-                <td>{{ req.amount }}</td>
-                <td class="status">{{ req.status }}</td>
+                <td><strong>{{ req.item_name }}</strong></td>
+                <td>{{ req.quantity }} шт.</td>
+                <td>{{ req.category }}</td>
+                <td><span class="status">{{ req.status }}</span></td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" style="text-align: center; color: #999;">Активных заявок пока нет.</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-<<<<<<< HEAD
-=======
-    <br>
-    <a href="/cook/inventory">Назад на склад</a>
->>>>>>> origin/админ3
+</div>
+
 </body>
 </html>

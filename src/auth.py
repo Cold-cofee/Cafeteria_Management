@@ -183,8 +183,16 @@ def logout():
 
 @app.route('/cook/storage')
 def cook_storage():
-    if session.get('role') not in ['cook', 'admin']: return redirect(url_for('login'))
-    return render_template('cook/storage_manage.html', storage=Storage.query.all())
+    if session.get('role') not in ['cook', 'admin']:
+        return redirect(url_for('login'))
+
+    # Получаем и товары на складе, и поданные заявки
+    items = Storage.query.all()
+    all_requests = SupplyRequest.query.all()
+
+    return render_template('cook/procurement.html',
+                           storage=items,
+                           requests=all_requests)  # Передаем заявки для таблицы
 
 
 @app.route('/cook/request_supply', methods=['POST'])
