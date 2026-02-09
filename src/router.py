@@ -73,7 +73,7 @@ def buy_product(item_id):
         user=current_user.id,
         product=item.name,
         amount=1,
-        price=item.price_for_sell,
+        price=item.price,
         status='waiting',
         date=datetime.now()
     )
@@ -124,7 +124,7 @@ def approve_request():
         return "Доступ запрещен", 403
 
     req_id = request.form.get('req_id')
-    price_val = request.form.get('price_for_sell')
+    price_val = request.form.get('price')
 
     req = Requests.query.get(req_id)
     if req:
