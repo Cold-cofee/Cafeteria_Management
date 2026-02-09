@@ -16,7 +16,7 @@
                 <td>
                     <form action="{{ url_for('wallet_bp.approve_request') }}" method="POST" style="display:inline-block;">
                         <input type="hidden" name="req_id" value="{{ req.id }}">
-                        <input type="number" name="price_for_sell" placeholder="Цена" required style="width: 70px;">
+                        <input type="number" name="price" placeholder="Цена" required style="width: 70px;">
                         <button type="submit" style="color: green; cursor: pointer;">✅ Ок</button>
                     </form>
 
