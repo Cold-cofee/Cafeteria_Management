@@ -1,0 +1,79 @@
+# 🍽️ Canteen Management System
+
+Современная автоматизированная система управления столовой. Проект включает в себя личный кабинет пользователя, систему онлайн-покупок, управление складом для повара и полноценную админ-панель.
+
+## ✨ Основные возможности
+* **Личный кабинет:** Просмотр истории заказов и управление электронным кошельком.
+* **Магазин (Меню):** Покупка блюд в реальном времени с автоматическим списанием средств.
+* **Склад (Cook Panel):** Учет остатков продуктов, подача заявок на пополнение и уведомления о критическом остатке.
+* **Админ-панель:** Управление пользователями, одобрение заявок на склад и финансовая аналитика (с функцией печати отчетов).
+* **Интерфейс:** Современный дизайн в стиле "Glassmorphism", адаптированный под любые устройства.
+
+## 📂 Структура проекта
+├── alembic.ini
+├── docker-compose.yml
+├── Dockerfile
+├── et --soft HEAD~1
+├── git reset --soft HEAD~1
+├── main.py
+├── requirements.txt
+├── frontend/
+│   └── templates/
+│       ├── base.html
+│       ├── admin/
+│       │   ├── admin_panel.html
+│       │   └── requests.html
+│       ├── common/
+│       │   ├── index.html
+│       │   ├── login.html
+│       │   └── register.html
+│       ├── cook/
+│       │   ├── inventory.html
+│       │   ├── manage_requests.html
+│       │   ├── orders_manage.html
+│       │   ├── procurement.html
+│       │   └── storage_manage.html
+│       └── student/
+│           ├── history.html
+│           ├── menu.html
+│           └── ticket.html
+└── src/
+    ├── admin.py
+    ├── app.py
+    ├── auth.py
+    ├── config.py
+    ├── cook.py
+    ├── router.py
+    ├── schemas.py
+    ├── service.py
+    ├── student.py
+    ├── utils.py
+    ├── worker.py
+    └── database/
+        ├── __init__.py
+        ├── database.py
+        ├── history.py
+        ├── menu.py
+        ├── requests.py
+        ├── reviews.py
+        ├── store.py
+        ├── users.py
+        └── wallets.py
+
+
+
+## 🛠️ Инструкция по установке и развертыванию
+
+Для запуска проекта вам понадобится установленный **Docker** и **Docker Compose**.
+
+### 1. Подготовка
+Склонируйте репозиторий или скачайте архив с проектом в рабочую папку.
+
+### 2. Запуск проекта
+Откройте терминал (или командную строку) в папке проекта и выполните команду:
+
+```bash
+docker-compose up --build
+```
+
+После успешного запуска приложение будет доступно по адресу: 👉 http://localhost:5000
