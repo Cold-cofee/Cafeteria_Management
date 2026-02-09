@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель администратора — Управление столовой</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1e293b 0%, #3b82f6 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #111827;
+            overflow-x: hidden;
+        }
+
+        /* Стили для печати отчета */
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            
+            body { 
+                background: white !important; 
+                color: black !important; 
+                padding: 0; 
+            }
+
+            /* Убираем прозрачность текста при печати (принтеры её не любят) */
+            .section-title { 
+                background: none !important;
+                -webkit-text-fill-color: #000 !important; 
+                color: #000 !important;
+                font-size: 20pt !important;
+            }
+
+            /* Делаем карточки видимыми на белом листе */
+            .glass-effect, .stat-card {
+                background: white !important;
+                border: 1px solid #ddd !important;
+                backdrop-filter: none !important;
+                box-shadow: none !important;
+                page-break-inside: avoid;
+            }
+
+            /* Делаем иконки-эмодзи видимыми (убираем opacity-30) */
+            .opacity-30 {
+                opacity: 1 !important;
+                color: #333 !important;
+            }
+        }
+        
+        @media screen { .only-print-footer { display: none !important; } }
+
+        /* Современные стили */
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(12px);
+            border: 1.5px solid rgba(59, 130, 246, 0.10);
+        }
+
+        .gradient-border {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gradient-border::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+            background-size: 200% 100%;
+        }
+
+        .stat-card {
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(59, 130, 246, 0.15);
+        }
+
+        .button-modern {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .user-row {
+            transition: all 0.3s ease;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+        }
+
+        .user-row:hover {
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+
+        .request-card {
+            transition: all 0.3s ease;
+            position: relative;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .request-card:hover {
+            transform: translateX(8px);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.1);
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .role-admin { background: linear-gradient(135deg, #8b5cf6, #a78bfa); color: white; }
+        .role-cook { background: linear-gradient(135deg, #f97316, #fb923c); color: white; }
+        .role-student { background: linear-gradient(135deg, #3b82f6, #60a5fa); color: white; }
+
+        .input-modern {
+            background: #f1f5f9;
+            border: 2px solid #3b82f6;
+            border-radius: 14px;
+            padding: 12px 16px 12px 40px;
+            font-size: 16px;
+            height: 48px;
+            min-height: unset;
+            box-shadow: 0 2px 8px rgba(59,130,246,0.04);
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+            display: block;
+            width: 100%;
+        }
+
+        .input-modern:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+            background: #fff;
+        }
+
+        .navbar-modern {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .print-button {
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .print-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(59, 130, 246, 0.4);
+        }
+
+        .action-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid;
+            font-weight: 700;
+            font-size: 0.75rem;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .action-button:hover { transform: translateY(-2px); }
+
+        .approve-btn {
+            border-color: #10b981;
+            color: #059669;
+            background: rgba(16, 185, 129, 0.05);
+        }
+        .approve-btn:hover { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+
+        .reject-btn {
+            border-color: #ef4444;
+            color: #dc2626;
+            background: rgba(239, 68, 68, 0.05);
+        }
+        .reject-btn:hover { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            /* Убираем прозрачность и ставим яркий градиент или белый цвет */
+            background: linear-gradient(135deg, #ffffff, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+
+        .empty-state { text-align: center; padding: 40px 20px; color: #94a3b8; }
+        .empty-state-icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.6; }
+
+        .badge-count {
+            background: linear-gradient(135deg, #ef4444, #f87171);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .no-scrollbar::-webkit-scrollbar { width: 6px; }
+        .no-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .no-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Адаптивность для мобильных */
+        @media (max-width: 640px) {
+            .navbar-modern .flex { flex-direction: row !important; }
+            .section-title { font-size: 1.25rem; }
+            table { display: none !important; }
+            .user-card { display: block; border-bottom: 1px solid #eee; padding: 15px 0; }
+            .user-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+            .user-card-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+            .hidden-mobile { display: none !important; }
+        }
+        @media (min-width: 641px) {
+            .user-card { display: none !important; }
+            table { display: table !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar-modern sticky top-0 z-30 no-print">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-2xl shadow-lg">
+                        ⚙️
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                            Админ-панель
+                        </h1>
+                        <p class="text-xs text-slate-500 font-medium hidden sm:block">Управление столовой</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a href="/" class="px-4 py-2 text-slate-700 font-semibold hover:text-blue-600 transition flex items-center gap-2 text-sm sm:text-base">
+                        ← <span class="hidden sm:inline">В кабинет</span><span class="sm:hidden">Назад</span>
+                    </a>
+                    <div class="w-px h-8 bg-slate-200 hidden sm:block"></div>
+                    <button onclick="window.print()" class="print-button text-white px-4 sm:px-6 py-2 rounded-xl transition font-bold flex items-center gap-2 hover:shadow-lg text-sm sm:text-base">
+                        <span>🖨️</span> <span class="hidden sm:inline">Отчет</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-6 py-8 sm:py-12">
+        
+        <div class="mb-12">
+            <h2 class="section-title mb-8 flex items-center gap-3">
+                Сводка по столовой
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <div class="stat-card glass-effect p-8 rounded-2xl gradient-border">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Посещаемость сегодня</p>
+                            <p class="text-4xl font-black text-slate-800">{{ stats.visitors }}<span class="text-lg text-slate-400 font-normal ml-2">чел.</span></p>
+                            <div class="mt-4 w-full bg-slate-200 rounded-full h-2">
+                                <div class="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full" style="width: 100%"></div>
+                            </div>
+                        </div>
+                        <div class="text-5xl opacity-30">👥</div>
+                    </div>
+                </div>
+
+                <div class="stat-card glass-effect p-8 rounded-2xl gradient-border">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Выдано блюд</p>
+                            <p class="text-4xl font-black text-emerald-600">{{ stats.total_orders }}<span class="text-lg text-slate-400 font-normal ml-2">шт.</span></p>
+                            <div class="mt-4 w-full bg-slate-200 rounded-full h-2">
+                                <div class="bg-gradient-to-r from-emerald-500 to-emerald-600 h-2 rounded-full" style="width: 100%"></div>
+                            </div>
+                        </div>
+                        <div class="text-5xl opacity-30">🍽️</div>
+                    </div>
+                </div>
+
+                <div class="stat-card glass-effect p-8 rounded-2xl gradient-border">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Популярное блюдо</p>
+                            <p class="text-2xl font-black text-amber-600 mt-2">{{ stats.popular }}</p>
+                            <p class="text-xs text-slate-500 mt-4">Лидер продаж сегодня</p>
+                        </div>
+                        <div class="text-5xl opacity-30">⭐</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <div class="lg:col-span-1">
+                <div class="glass-effect rounded-2xl overflow-hidden shadow-xl h-full">
+                    <div class="bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-5 border-b border-slate-100">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                                <span>📦</span> Заявки на закупку
+                            </h3>
+                            {% if supply_requests %}
+                            <span class="badge-count">{{ supply_requests|length }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="p-6 space-y-3 overflow-y-auto max-h-[600px] no-scrollbar">
+                        {% if supply_requests %}
+                            {% for s in supply_requests %}
+                            <div class="request-card bg-white p-5 rounded-xl shadow-sm hover:shadow-md border border-slate-100">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div class="flex-1">
+                                        <p class="font-bold text-slate-800 text-base">{{ s.item_name }}</p>
+                                        <span class="inline-block text-[10px] uppercase bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100 font-bold mt-1">{{ s.category }}</span>
+                                    </div>
+                                    <p class="font-black text-blue-600 text-lg whitespace-nowrap">{{ s.quantity }} шт.</p>
+                                </div>
+                                <p class="text-[11px] text-slate-400 mb-4 font-medium flex items-center gap-1">
+                                    <span>🕒</span> {{ s.date.strftime('%d.%m %H:%M') }}
+                                </p>
+                                <div class="flex gap-2 no-print">
+                                    <a href="/admin/approve_supply/{{ s.id }}/approved" class="flex-1 text-center action-button approve-btn" title="Одобрить">✓ Одобрить</a>
+                                    <a href="/admin/approve_supply/{{ s.id }}/rejected" class="flex-1 text-center action-button reject-btn" title="Отказать">✕ Отказ</a>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📥</div>
+                                <p class="text-sm font-medium">Новых заявок нет</p>
+                                <p class="text-xs mt-1 text-slate-400">Все закупки обработаны</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2">
+                <div class="glass-effect rounded-2xl overflow-hidden shadow-xl h-full">
+                    <div class="bg-gradient-to-r from-slate-50 to-purple-50 px-6 py-5 border-b border-slate-100">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                                <span>🛡️</span> Пользователи и роли
+                            </h3>
+                            
+                            <div class="relative w-full md:w-64 no-print">
+                                <span class="absolute inset-y-0 left-3 flex items-center text-slate-400 text-sm">🔍</span>
+                                <input type="text" id="userSearch" onkeyup="filterUsers()" 
+                                    class="bg-white border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2" 
+                                    placeholder="Поиск по логину...">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-slate-50 border-b border-slate-100">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Логин</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Роль</th>
+                                    <th class="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider no-print">Изменить роль</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for u in users %}
+                                <tr class="user-row hover:bg-slate-50 transition">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="font-bold text-slate-700">{{ u.login }}</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="role-badge 
+                                            {% if u.role == 'admin' %} role-admin 
+                                            {% elif u.role == 'cook' %} role-cook 
+                                            {% else %} role-student {% endif %}">
+                                            {% if u.role == 'admin' %} Админ
+                                            {% elif u.role == 'cook' %} Повар
+                                            {% else %} Ученик {% endif %}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center no-print">
+                                        <div class="flex gap-2 justify-center">
+                                            <a href="/admin/change_role/{{ u.id }}/student" 
+                                               class="px-3 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition">
+                                               Уч.
+                                            </a>
+                                            <a href="/admin/change_role/{{ u.id }}/cook" 
+                                               class="px-3 py-1 rounded bg-orange-50 hover:bg-orange-100 text-orange-600 text-xs font-bold transition">
+                                               Повар
+                                            </a>
+                                            <a href="/admin/change_role/{{ u.id }}/admin" 
+                                               class="px-3 py-1 rounded bg-purple-50 hover:bg-purple-100 text-purple-600 text-xs font-bold transition">
+                                               Админ
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+
+                        <div class="px-6 pb-6 pt-2 block sm:hidden" id="userCardsContainer">
+                            {% for u in users %}
+                            <div class="user-card user-row" data-login="{{ u.login }}">
+                                <div class="user-card-header">
+                                    <div class="font-bold text-slate-800">{{ u.login }}</div>
+                                    <span class="role-badge 
+                                        {% if u.role == 'admin' %} role-admin 
+                                        {% elif u.role == 'cook' %} role-cook 
+                                        {% else %} role-student {% endif %}">
+                                        {{ u.role }}
+                                    </span>
+                                </div>
+                                <div class="user-card-actions mt-3 no-print">
+                                    <a href="/admin/change_role/{{ u.id }}/student" class="text-center py-2 rounded bg-slate-100 text-slate-600 text-xs font-bold">Ученик</a>
+                                    <a href="/admin/change_role/{{ u.id }}/cook" class="text-center py-2 rounded bg-orange-50 text-orange-600 text-xs font-bold">Повар</a>
+                                    <a href="/admin/change_role/{{ u.id }}/admin" class="text-center py-2 rounded bg-purple-50 text-purple-600 text-xs font-bold">Админ</a>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="only-print-footer mt-12 pt-8 border-t-2 border-slate-900">
+            <div class="flex justify-between items-end">
+                <div>
+                    <p class="text-sm font-bold uppercase tracking-widest text-slate-900 mb-1">Отчет сформирован автоматически</p>
+                    <p class="text-slate-600 text-sm">Система управления школьной столовой</p>
+                </div>
+                <div class="text-right">
+                    <p class="mb-6 font-medium text-slate-800">📅 Дата: {{ stats.today_date }}</p>
+                    <div class="flex items-end gap-2">
+                        <span class="text-sm text-slate-600">Подпись:</span>
+                        <div class="border-b-2 border-slate-900 w-48 h-1"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Функция фильтрации пользователей
+        function filterUsers() {
+            let input = document.getElementById('userSearch');
+            let filter = input.value.toLowerCase().trim();
+            let rows = document.querySelectorAll('.user-row');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                // Ищем в ячейке таблицы или в атрибуте карточки
+                let loginCell = row.querySelector('td:first-child');
+                let login = '';
+                
+                if (loginCell) {
+                    login = loginCell.textContent.toLowerCase().trim();
+                } else {
+                    login = row.getAttribute('data-login') ? row.getAttribute('data-login').toLowerCase().trim() : '';
+                }
+                
+                let isVisible = !filter || login.includes(filter);
+                row.style.display = isVisible ? "" : "none";
+                if (isVisible) visibleCount++;
+            });
+        }
+
+        // Анимация появления
+        document.addEventListener('DOMContentLoaded', function() {
+            const elements = document.querySelectorAll('.stat-card, .glass-effect');
+            elements.forEach((el, index) => {
+                el.style.animation = `slideUp ${0.5 + index * 0.1}s ease-out`;
+            });
+        });
+    </script>
+</body>
+</html>

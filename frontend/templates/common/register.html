@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрация — Столовая{% endblock %}
+
+{% block content %}
+<style>
+  body {
+    background: linear-gradient(135deg, #1e293b 0%, #3b82f6 100%);
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #111827;
+    overflow-x: hidden;
+  }
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(12px);
+    border: 1.5px solid rgba(59, 130, 246, 0.10);
+    box-shadow: 0 20px 40px rgba(59, 130, 246, 0.15);
+  }
+  .input-modern {
+    background: #f8fafc;
+    border: 2px solid #a5b4fc;
+    border-radius: 12px;
+    padding: 18px 16px 6px 16px;
+    font-size: 16px;
+    height: 48px;
+    min-height: unset;
+    box-shadow: 0 2px 8px rgba(59,130,246,0.04);
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    display: block;
+    width: 100%;
+    color: #1e293b;
+    font-weight: 500;
+  }
+  .input-modern:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    background: #fff;
+  }
+  .input-label {
+    position: absolute;
+    left: 18px;
+    top: 10px;
+    font-size: 12px;
+    color: #6366f1;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    pointer-events: none;
+    background: transparent;
+    z-index: 2;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .input-modern:focus + .input-label,
+  .input-modern:not(:placeholder-shown) + .input-label {
+    top: 2px;
+    left: 14px;
+    font-size: 10px;
+    color: #3b82f6;
+  }
+  .btn-modern {
+    background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+    color: #fff;
+    font-weight: 700;
+    border-radius: 12px;
+    padding: 14px 20px;
+    transition: all 0.3s;
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.10);
+    border: none;
+    cursor: pointer;
+    font-size: 15px;
+    letter-spacing: 0.05em;
+  }
+  .btn-modern:hover {
+    background: linear-gradient(90deg, #3b82f6 0%, #6366f1 100%);
+    color: #fff;
+    box-shadow: 0 12px 30px rgba(59, 130, 246, 0.18);
+    transform: translateY(-2px);
+  }
+  @media (max-width: 640px) {
+    .glass-effect {
+      padding: 16px !important;
+    }
+    .btn-modern {
+      font-size: 13px;
+      padding: 12px 8px;
+    }
+    .input-modern {
+      font-size: 15px;
+      padding: 16px 12px 6px 12px;
+      border-radius: 10px;
+    }
+    .input-label {
+      left: 12px;
+      top: 10px;
+      font-size: 11px;
+    }
+  }
+</style>
+<div class="min-h-screen flex items-center justify-center py-8 px-2">
+  <div class="glass-effect rounded-2xl shadow-xl w-full max-w-md p-8 sm:p-10 text-center">
+    <div class="text-center mb-6">
+      <h2 class="text-3xl font-extrabold text-slate-900">Создать аккаунт</h2>
+      <p class="mt-2 text-sm text-slate-600">Введите данные для регистрации в системе</p>
+    </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="mb-4">
+        {% for category, message in messages %}
+        <div class="flex items-center p-4 mb-2 text-sm rounded-xl border shadow-lg animate-bounce-short
+          {{ 'bg-green-50 text-green-800 border-green-200' if category == 'success' else 'bg-red-50 text-red-800 border-red-200' }}">
+          {% if category == 'success' %}
+          <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+          {% else %}
+          <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+          {% endif %}
+          <span class="font-bold">{{ message }}</span>
+          <button onclick="this.parentElement.remove()" class="ml-auto bg-transparent hover:opacity-70 transition">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l-4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+          </button>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endwith %}
+    <form class="space-y-6 mt-4" action="/register" method="POST">
+      <div class="relative mb-2">
+        <input id="login" name="login" type="text" required class="input-modern" placeholder=" ">
+        <label for="login" class="input-label">Логин</label>
+      </div>
+      <div class="relative mb-2">
+        <input id="password" name="password" type="password" required class="input-modern" placeholder=" ">
+        <label for="password" class="input-label">Пароль</label>
+      </div>
+      <div class="relative mb-2">
+        <textarea id="allergies" name="allergies" rows="3" class="input-modern resize-none" placeholder=" "></textarea>
+        <label for="allergies" class="input-label">Пищевые аллергии (необязательно)</label>
+      </div>
+      <button type="submit" class="w-full btn-modern mt-2">Зарегистрироваться</button>
+    </form>
+    <div class="text-center mt-4">
+      <a href="/" class="font-medium text-blue-600 hover:text-blue-500 text-sm transition-colors">Уже есть аккаунт? Войти</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Меню столовой — Заказ блюд</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e293b 0%, #3b82f6 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #111827;
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(12px);
+            border: 1.5px solid rgba(59, 130, 246, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .item-card {
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .item-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border-color: #3b82f6;
+        }
+
+        .price-tag {
+            background: linear-gradient(135deg, #059669, #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        .btn-buy {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-buy:hover {
+            background: linear-gradient(135deg, #2563eb, #1e40af);
+            transform: scale(1.02);
+            box-shadow: 0 6px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #ffffff, #93c5fd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="max-w-6xl mx-auto px-6 py-10">
+        
+        <header class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+            <div>
+                <h1 class="section-title mb-2">🍽️ Меню столовой</h1>
+                <p class="text-blue-100 font-medium">Выберите блюда для заказа</p>
+            </div>
+            <a href="{{ url_for('wallet_bp.wallet_page') }}" 
+               class="glass-effect px-6 py-3 rounded-2xl text-slate-700 font-bold hover:text-blue-600 transition flex items-center gap-2 w-fit">
+                <span>←</span> Мой кошелек
+            </a>
+        </header>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {% for item in items %}
+            <div class="item-card glass-effect rounded-3xl p-6 flex flex-col justify-between">
+                <div>
+                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-2xl mb-4">
+                        {% if 'Суп' in item.name %}🥣{% elif 'Напиток' in item.name or 'Чай' in item.name %}☕{% else %}🍱{% endif %}
+                    </div>
+                    
+                    <h3 class="text-xl font-bold text-slate-800 mb-1">{{ item.name }}</h3>
+                    
+                    <div class="flex items-center gap-2 mb-4">
+                        {% if item.count < 5 %}
+                            <span class="flex items-center gap-1 text-[11px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full border border-red-100">
+                                <span class="animate-ping w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                ОСТАЛОСЬ: {{ item.count }} ШТ.
+                            </span>
+                        {% else %}
+                            <span class="text-[11px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                                В НАЛИЧИИ: {{ item.count }} ШТ.
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-slate-100">
+                    <div class="flex items-baseline justify-between mb-4">
+                        <span class="text-slate-400 text-xs font-bold uppercase tracking-wider">Цена</span>
+                        <span class="price-tag text-2xl">{{ item.price }} ₽</span>
+                    </div>
+
+                    <form action="{{ url_for('wallet_bp.buy_product', item_id=item.id) }}" method="POST">
+                        <button type="submit" class="btn-buy w-full py-3 rounded-xl text-white font-bold text-sm">
+                            Купить сейчас
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if not items %}
+        <div class="glass-effect rounded-3xl p-12 text-center max-w-md mx-auto mt-20">
+            <div class="text-6xl mb-6">🏜️</div>
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">Меню пока пусто</h2>
+            <p class="text-slate-500">Повара уже готовят что-то вкусненькое. Заходите позже!</p>
+            <a href="{{ url_for('wallet_bp.wallet_page') }}" class="mt-6 inline-block text-blue-600 font-bold hover:underline">
+                Вернуться назад
+            </a>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <div class="fixed top-0 left-0 w-full h-full pointer-events-none -z-10 overflow-hidden">
+        <div class="absolute top-[10%] left-[5%] w-64 h-64 bg-blue-400 rounded-full mix-blend-multiply filter blur-[80px] opacity-20"></div>
+        <div class="absolute bottom-[10%] right-[5%] w-80 h-80 bg-purple-400 rounded-full mix-blend-multiply filter blur-[80px] opacity-20"></div>
+    </div>
+
+</body>
+</html>

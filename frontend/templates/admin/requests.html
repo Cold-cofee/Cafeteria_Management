@@ -1,0 +1,32 @@
+<table>
+        <thead>
+            <tr>
+                <th>Дата</th>
+                <th>Продукт</th>
+                <th>Кол-во (шт)</th>
+                <th>Действие</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for req in requests %}
+            <tr>
+                <td>{{ req.date.strftime('%d.%m %H:%M') if req.date else '-' }}</td>
+                <td>{{ req.product }}</td>
+                <td>{{ req.amount }}</td>
+                <td>
+                    <form action="{{ url_for('wallet_bp.approve_request') }}" method="POST" style="display:inline-block;">
+                        <input type="hidden" name="req_id" value="{{ req.id }}">
+                        <input type="number" name="price_for_sell" placeholder="Цена" required style="width: 70px;">
+                        <button type="submit" style="color: green; cursor: pointer;">✅ Ок</button>
+                    </form>
+
+                    <a href="{{ url_for('wallet_bp.delete_request', req_id=req.id) }}" 
+                       onclick="return confirm('Точно отклонить?')"
+                       style="color: red; text-decoration: none; margin-left: 10px; font-weight: bold;">
+                       ❌ Нет
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>

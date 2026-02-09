@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление складом</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e293b 0%, #3b82f6 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #111827;
+        }
+        
+        /* Эффект стекла */
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(12px);
+            border: 1.5px solid rgba(245, 158, 11, 0.10); /* Оранжевая обводка */
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Заголовки */
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #d97706, #f59e0b); /* Оранжевый градиент */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Карточки */
+        .card-modern {
+            border-radius: 1.5rem;
+            background: white;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        .card-modern:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Поля ввода */
+        .input-modern {
+            background: #fff;
+            border: 2px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 15px;
+            transition: all 0.3s;
+            width: 100%;
+            color: #334155;
+            font-weight: 500;
+        }
+        .input-modern:focus {
+            outline: none;
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+        }
+
+        /* Кнопки */
+        .btn-modern {
+            background: linear-gradient(135deg, #d97706, #f59e0b);
+            color: white;
+            font-weight: 700;
+            border-radius: 12px;
+            padding: 12px 24px;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-modern:hover {
+            background: linear-gradient(135deg, #b45309, #d97706);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.2);
+        }
+
+        /* Кнопка назад */
+        .btn-back {
+            background: white;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+        .btn-back:hover {
+            background: #f8fafc;
+            color: #1e293b;
+        }
+
+        /* Бейджи */
+        .badge {
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="max-w-5xl mx-auto px-6 pt-6 mb-8">
+        <div class="glass-effect rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-xl">
+                    👨‍🍳
+                </div>
+                <div>
+                    <h1 class="font-black text-slate-800 text-lg sm:text-xl">Управление складом</h1>
+                    <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Панель повара</p>
+                </div>
+            </div>
+            <a href="{{ url_for('index') }}" class="btn-modern btn-back w-full sm:w-auto text-sm">
+                <span>←</span> В личный кабинет
+            </a>
+        </div>
+    </nav>
+
+    <div class="max-w-5xl mx-auto px-6 pb-12">
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            <div class="md:col-span-1">
+                <div class="card-modern p-6 sticky top-6 border-l-4 border-l-orange-500">
+                    <h2 class="section-title mb-1 flex items-center gap-2">
+                        <span>📦</span> Пополнение
+                    </h2>
+                    <p class="text-xs text-slate-400 mb-6 font-medium">Создать заявку на закупку продуктов</p>
+
+                    <form action="/cook/request_supply" method="POST" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Название товара</label>
+                            <input type="text" name="name" placeholder="Например: Молоко" required class="input-modern">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Кол-во</label>
+                                <input type="number" name="count" placeholder="0" required class="input-modern">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Категория</label>
+                                <select name="category" required class="input-modern px-2 cursor-pointer">
+                                    <option value="" disabled selected>Выбрать</option>
+                                    <option value="Еда">Еда</option>
+                                    <option value="Напитки">Напитки</option>
+                                    <option value="Десерты">Десерты</option>
+                                    <option value="Гарниры">Гарниры</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-modern w-full mt-2">
+                            <span>Отправить заявку</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                        </button>
+                        
+                        <div class="bg-blue-50 rounded-xl p-3 mt-4 border border-blue-100">
+                            <p class="text-[10px] text-blue-600 leading-tight">
+                                ℹ️ Товар появится на складе после одобрения администратором.
+                            </p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="md:col-span-2">
+                <div class="glass-effect rounded-2xl overflow-hidden shadow-lg">
+                    <div class="bg-slate-50/50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-700 text-lg">Текущие остатки</h3>
+                        <span class="bg-slate-200 text-slate-600 text-xs font-bold px-3 py-1 rounded-full">Всего: {{ storage|length }}</span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-slate-50 border-b border-slate-100">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Товар</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Категория</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Остаток</th>
+                                    <th class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 bg-white">
+                                {% for item in storage %}
+                                <tr class="hover:bg-slate-50 transition group">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="font-bold text-slate-700 text-base">{{ item.name }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="badge bg-slate-100 text-slate-600 border border-slate-200">
+                                            {{ item.type_of_product }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        {% if item.count < 5 %}
+                                            <div class="flex items-center text-red-600 font-bold bg-red-50 w-fit px-3 py-1 rounded-lg border border-red-100">
+                                                <span>{{ item.count }} шт.</span>
+                                                <span class="ml-2 text-[10px] uppercase bg-red-600 text-white px-1.5 rounded animate-pulse">Мало</span>
+                                            </div>
+                                        {% else %}
+                                            <span class="font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-100">
+                                                {{ item.count }} шт.
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                                        <a href="/cook/delete_product/{{ item.id }}" 
+                                           onclick="return confirm('Вы уверены, что хотите полностью удалить товар из меню?')"
+                                           class="text-slate-400 hover:text-red-600 font-bold text-xs transition-colors flex items-center justify-end gap-1 group-hover:visible">
+                                           <span>Удалить</span>
+                                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="px-6 py-12 text-center">
+                                        <div class="flex flex-col items-center justify-center text-slate-400">
+                                            <span class="text-4xl mb-3 opacity-50">🏚️</span>
+                                            <p class="font-medium">Склад пуст</p>
+                                            <p class="text-xs mt-1">Создайте заявку на закупку слева</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

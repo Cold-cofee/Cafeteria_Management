@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Заявки на закупку</title>
+    <style>
+        body { font-family: sans-serif; margin: 30px; line-height: 1.6; }
+        .form-box { background: #f4f4f4; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+        th { background: #eee; }
+        .status { font-weight: bold; color: #d35400; }
+        .nav-link { text-decoration: none; color: #007bff; margin-right: 20px;}
+    </style>
+</head>
+<body>
+    <div style="display:flex; justify-content:space-between;">
+        <h1>Заявки на закупку продуктов</h1>
+        <a href="{{ url_for('wallet_bp.admin_page') }}" class="nav-link">На склад (Админ) →</a>
+    </div>
+
+    <div class="form-box">
+        <h3>Новая заявка</h3>
+        <form method="POST" action="{{ url_for('wallet_bp.procurement_page') }}">
+            <input type="text" name="product" placeholder="Название продукта" required>
+            <input type="number" name="amount" placeholder="Количество" required>
+            
+            <button type="submit" style="cursor:pointer;">Отправить администратору</button>
+        </form>
+    </div>
+
+    <h3>Текущие заявки</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Дата</th>
+                <th>Продукт</th>
+                <th>Кол-во</th>
+                <th>Статус</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for req in requests %}
+            <tr>
+                <td>{{ req.date.strftime('%d.%m.%Y') if req.date else '-' }}</td>
+                <td>{{ req.product }}</td>
+                <td>{{ req.amount }}</td>
+                <td class="status">{{ req.status }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+<<<<<<< HEAD
+=======
+    <br>
+    <a href="/cook/inventory">Назад на склад</a>
+>>>>>>> origin/админ3
+</body>
+</html>
