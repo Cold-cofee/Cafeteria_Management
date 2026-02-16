@@ -34,6 +34,7 @@ def wallet_page():
         if not errors:
             if action == "deposit":
                 success, msg = StudentService.top_up_balance(user, amount)
+                message_type = "success" if success else "error"
             elif action == "withdraw":
                 success, msg = StudentService.withdraw_balance(user, amount)
             message = msg
@@ -73,12 +74,13 @@ def buy_product(item_id):
         user=current_user.id,
         product=item.name,
         amount=1,
-        price=item.price,
         status='waiting',
         date=datetime.now()
     )
     db.session.add(new_request)
     db.session.commit()
+
+    flash("Заказ отправлен повару! Ждите одобрения в профиле.")
     return redirect(url_for('wallet_bp.menu_page'))
 
 
@@ -107,6 +109,29 @@ def pay_request(req_id):
 
 
 # --- 4. ПАНЕЛЬ АДМИНИСТРАТОРА (ОДОБРЕНИЕ) ---
+@wallet_bp.route('/admin/requests', methods=['GET'])
+@login_required
+def admin_prices():
+    if current_user.role != 'admin':
+        return redirect(url_for('index'))
+
+    # Если админ нажал кнопку сохранить
+    if request.method == 'POST':
+        product_id = request.form.get('product_id')
+        new_price = request.form.get('new_price')
+        
+        item = Storage.query.get(product_id)
+        if item:
+            item.price = int(new_price) # обновляем цену
+            db.session.commit()
+            flash(f"Цена на {item.name} обновлена!")
+        
+        return redirect(url_for('admin_prices'))
+
+    # Просто показываем страницу
+    items = Storage.query.all() # <-- ВАЖНО: Загружаем все товары
+    return render_template('admin/prices.html', items=items)
+
 @wallet_bp.route('/admin/requests', methods=['GET'])
 @login_required
 def requests_page():
